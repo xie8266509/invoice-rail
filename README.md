@@ -1,159 +1,166 @@
 # Invoice Rail
 
-Invoice Rail 是一个面向 Arc Testnet 的稳定币发票与对账 MVP。商户生成 USDC 或 EURC 付款请求，付款方通过浏览器钱包签名，应用使用 Arc 预部署的 `Memo` 合约把转账与发票 ID 原子绑定，并可在链上重新核验付款状态。
+**Stablecoin invoicing with verifiable onchain reconciliation on Arc.**
 
-当前 Alpha 不托管私钥、不需要自定义合约。开发环境默认使用嵌入式 PostgreSQL，部署时可通过 `DATABASE_URL` 无代码切换到托管 PostgreSQL。
+[Live app](https://invoice-rail-web.onrender.com) · [Verified Arc transaction](https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1) · [Demo video](docs/assets/invoice-rail-demo.mp4) · [Architecture](docs/ARCHITECTURE.md) · [Submission kit](docs/submission/INDEX.md)
 
-## 已实现
+Invoice Rail lets a merchant issue a USDC or EURC payment request, share a short payment link, and reconcile settlement from an Arc `Memo` event. The payer signs with their own wallet; Invoice Rail never receives private keys and does not custody funds.
 
-- 创建 USDC / EURC 发票并同步到服务端数据库
-- 钱包消息签名登录、一次性 challenge 与 HttpOnly 会话
-- 商户发票和 Webhook API 按已验证钱包地址隔离
-- 地址型团队工作区，支持 owner、editor、viewer 三种角色
-- 工作区切换、团队成员管理、Webhook 管理和 CSV 导出界面
-- 生成 `/pay/<shareId>` 服务端短付款链接
-- 支持 MetaMask、Rabby、Coinbase Wallet、Rainbow 等 EIP-1193 钱包
-- 自动添加或切换至 Arc Testnet
-- 通过 Arc `Memo.memo(...)` 完成带发票标识的稳定币转账
-- 按 `memoId` 查询事件，并校验目标代币与完整转账 calldata 哈希
-- 按区块游标自动索引 Memo 事件，并使用交易哈希与日志序号幂等入账
-- 可独立运行的索引 Worker，以及带 HMAC 签名和重试队列的 `invoice.paid` Webhook
-- 支持 PGlite 本地存储和 `pg` 托管 PostgreSQL 连接池
-- 自动迁移当前浏览器中已有的旧发票
-- 显示链上余额、RPC 状态、交易回执和错误状态
-- 响应式浅色 / 深色界面
-- 对付款链接执行严格字段校验，避免直接信任 URL 数据
+![A verified Invoice Rail payment](demo-video/public/production-paid.png)
 
-## 本地运行
+## Production proof
 
-要求 Node.js 22+ 与 pnpm。
+| Item | Verified result |
+| --- | --- |
+| Public deployment | [invoice-rail-web.onrender.com](https://invoice-rail-web.onrender.com) |
+| Live Arc payment | `0.01 USDC` for invoice `IR-260715-8747A0EB3759` |
+| Transaction | [`0x8c93…18c1`](https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1) |
+| Block | `51956775` |
+| Explorer result | `Success`, confirmed within `<= 0.51s` |
+| Testnet transaction fee | `0.002553726 USDC` |
+| Reconciliation | Worker observed one Memo log and persisted one payment |
+| Production data | Managed PostgreSQL 17 on Render |
+
+These are testnet results, not production-volume or customer claims.
+
+## The problem
+
+Stablecoin transfers settle quickly, but finance teams still need to answer a slower operational question: **which invoice did this transfer pay?** Matching wallet addresses and amounts is fragile when payers reuse amounts, pay from a different wallet, or generate many transactions.
+
+Invoice Rail binds the invoice reference and the token transfer in one Arc transaction. The same event can be indexed, verified, exported, and delivered to downstream systems.
+
+## How it works
+
+1. A merchant signs in with a wallet and creates an invoice.
+2. Invoice Rail stores the invoice, its `memoId`, token address, and exact transfer calldata hash.
+3. The merchant shares a random `/pay/<shareId>` link.
+4. The payer signs `Memo.memo(token, transferData, memoId, memoData)` on Arc.
+5. Arc executes the transfer and emits the Memo event atomically.
+6. A background worker verifies the event and marks the invoice paid.
+7. The app displays the receipt and can deliver a signed `invoice.paid` webhook.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Merchant[Merchant browser] --> Web[Next.js Web and API]
+  Payer[Payer browser] --> Wallet[EIP-1193 wallet]
+  Wallet --> Memo[Arc Memo contract]
+  Memo --> Tokens[USDC or EURC]
+  Web --> DB[(PostgreSQL)]
+  Worker[Indexer and webhook worker] --> Web
+  Web --> RPC[Arc RPC failover]
+  RPC --> Memo
+  Web --> Hooks[Merchant webhooks]
+  Worker --> Hooks
+```
+
+The deployed topology uses one web service, one continuously running worker, and one private managed PostgreSQL database. Read traffic fails over across dRPC, Blockdaemon, and Circle RPC endpoints.
+
+## Why Arc
+
+- **USDC-native gas:** costs are denominated in the same unit finance teams already reconcile.
+- **Deterministic fast finality:** paid status can become an operational fact without reorg handling.
+- **Transaction memos:** the invoice reference and transfer remain part of one atomic transaction.
+- **EVM compatibility:** existing wallets and TypeScript tooling work without a custom signing stack.
+- **Stablecoin roadmap:** Arc provides a natural settlement layer for future cross-chain USDC collection.
+
+## Implemented capabilities
+
+- USDC and EURC invoices with strict amount, address, date, and memo validation
+- Random server-side short payment links plus backwards-compatible legacy links
+- Wallet challenge login with one-time challenges and `HttpOnly` sessions
+- Owner, editor, and viewer workspace roles enforced on the server
+- Exact Memo verification using `memoId`, token target, and calldata hash
+- Persistent block cursor and idempotency by transaction hash plus log index
+- Signed `invoice.paid` webhooks with an outbox and retry queue
+- CSV export with spreadsheet-formula injection protection
+- PGlite for local development and PostgreSQL for production
+- Independent web and worker processes from one Docker image
+- RPC fallback and actionable wallet guidance for provider rate limits
+- Responsive light and dark UI
+
+## Security model
+
+- Private keys never leave the wallet.
+- The application is non-custodial and never signs settlement transactions.
+- Merchant identity comes from a consumed wallet-signature challenge, not an address supplied in JSON.
+- Session tokens are only sent in `HttpOnly`, `SameSite=Lax` cookies; only hashes are stored.
+- Stateful writes must match the configured application origin.
+- Payment matching validates the official Memo contract, exact token target, memo ID, and transfer calldata hash.
+- Webhook signatures cover `<timestamp>.<raw-body>` with HMAC-SHA256.
+- Production database credentials and indexer secrets are injected by Render and are not committed.
+
+This is an Alpha on Arc Testnet. It has not completed a third-party security audit and must not be used with real funds.
+
+## Stack
+
+- Next.js 16, React 19, TypeScript
+- viem for wallet, contract, event, and receipt interactions
+- PostgreSQL / PGlite
+- Docker, Render Web Service, Render Background Worker
+- Vitest, ESLint, GitHub Actions
+- Remotion for the reproducible submission video
+
+## Local development
+
+Requirements: Node.js 22+ and pnpm.
 
 ```bash
 pnpm install
+cp .env.example .env.local
 pnpm dev
 ```
 
-打开 [http://localhost:3000](http://localhost:3000)。如需替换 RPC：
+Open [http://localhost:3000](http://localhost:3000).
 
-```bash
-cp .env.example .env.local
-```
-
-## 工程验证
+Run the engineering checks:
 
 ```bash
 pnpm check
 pnpm test:auth
-pnpm verify:invoice -- <invoice-id> <recipient> <amount> USDC
 pnpm indexer -- --once
+pnpm verify:invoice -- <invoice-id> <recipient> <amount> USDC
 ```
 
-`pnpm check` 会依次运行单元测试、ESLint 和生产构建。
+`pnpm check` runs the unit tests, ESLint, TypeScript checks, and the production build. `test:auth` uses temporary generated wallets and never reads a real private key.
 
-`test:auth` 是端到端安全测试，需要本地开发服务正在运行。它使用一次性临时测试钱包，不读取真实钱包私钥。
+## Production deployment
 
-本地数据库默认位于 `.data/invoice-rail`。修改 `INVOICE_RAIL_DB_DIR` 可以更换位置。设置 `DATABASE_URL` 后会自动使用托管 PostgreSQL；建议在连接串中显式设置云数据库要求的 `sslmode`。
+The repository includes `Dockerfile`, `compose.yaml`, and `render.yaml`. Production requires:
 
-索引器会在商户列表同步时运行，也可以由本地任务或定时任务触发：
+| Variable | Process | Purpose |
+| --- | --- | --- |
+| `APP_ORIGIN` | web | Exact HTTPS origin for signed login and origin checks |
+| `DATABASE_URL` | web | Managed PostgreSQL connection string |
+| `INDEXER_SECRET` | web + worker | Shared bearer secret for the background endpoint |
+| `INVOICE_RAIL_APP_URL` | worker | Base URL of the web service |
+| `NEXT_PUBLIC_ARC_RPC_URL` | build + web | Preferred Arc endpoint; the app keeps additional fallbacks |
 
-```bash
-curl -X POST http://localhost:3000/api/indexer
-```
+Deployment and rollback details are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-公开部署时应设置 `INDEXER_SECRET`，并通过 `Authorization: Bearer <secret>` 调用索引器端点。
+## Roadmap
 
-长期运行的后台进程使用同一个端点，同时处理 Arc 索引与 Webhook 投递：
+1. Versioned migrations, monitoring, alerts, rate limits, and third-party security review.
+2. Invitation acceptance, workspace naming, delivery history, and webhook replay.
+3. Search, reporting, partial payments, overpayments, refunds, and accounting integrations.
+4. Circle App Kit collection from other chains with Arc as the canonical settlement and reconciliation layer.
+5. Pilot programs with agencies, exporters, and stablecoin-native platforms.
 
-```bash
-INVOICE_RAIL_APP_URL=https://your-app.example \
-INDEXER_SECRET=replace-me \
-pnpm indexer
-```
+## Submission material
 
-生产环境必须设置 `APP_ORIGIN`、`DATABASE_URL` 和 `INDEXER_SECRET`。`APP_ORIGIN` 用于校验签名消息和所有带 Cookie 的写请求来源。
+- [Project overview](docs/submission/PROJECT_OVERVIEW.md)
+- [Architecture and technical design](docs/ARCHITECTURE.md)
+- [Demo script and shot list](docs/submission/DEMO_SCRIPT.md)
+- [Day One Architects application](docs/submission/ARCHITECTS_APPLICATION.md)
+- [Arc Builders Fund / grant application](docs/submission/GRANT_APPLICATION.md)
 
-## 生产部署
+## Official references
 
-项目包含可复用的多阶段 `Dockerfile`、`compose.yaml` 和 Render Blueprint `render.yaml`。同一个镜像分别运行：
-
-- Next.js Web/API 服务；
-- Arc 索引与 Webhook 投递 Worker；
-- 通过 `DATABASE_URL` 连接的 PostgreSQL。
-
-本地启动接近生产环境的完整栈：
-
-```bash
-cp .env.docker.example .env.docker
-# 替换文件中的两个占位 secret
-docker compose --env-file .env.docker up --build
-curl --fail http://localhost:3000/api/health
-```
-
-`/api/health` 会检查应用能否访问并初始化数据库。云平台部署拓扑、环境变量和发布验收步骤见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
-
-Render Blueprint 会创建一个 Web 服务、一个持续运行的 Worker 和一个仅允许私网访问的 PostgreSQL 数据库。`APP_ORIGIN`、Worker URL 和数据库连接串由 Render 服务引用自动注入，`INDEXER_SECRET` 由 Render 生成并安全共享。
-
-## 钱包登录与 Webhook
-
-商户连接钱包后点击 `Sign in`，签署的是登录消息，不会发送交易或消耗 Gas。挑战 5 分钟过期且只能使用一次，会话默认持续 7 天。`GET /api/invoices` 不再接受商户地址参数，只使用已验证会话中的地址。
-
-登录后可通过 `/api/webhooks` 创建、查询和删除端点。创建响应中的 `whsec_...` 只返回一次。每次付款通知包含：
-
-```text
-X-Invoice-Rail-Delivery: evt_...
-X-Invoice-Rail-Signature: t=<unix-seconds>,v1=<hmac-sha256>
-```
-
-签名内容为 `<timestamp>.<raw-request-body>`。公开端点必须使用 HTTPS；本地开发可使用 localhost HTTP。
-
-## 团队工作区
-
-每个已登录钱包天然拥有一个工作区。owner 可以把其他 EVM 地址添加为 editor 或 viewer：
-
-- `owner`：管理成员、Webhook、发票和导出。
-- `editor`：查看、创建发票和导出。
-- `viewer`：只读查看和导出。
-
-成员使用自己的钱包签名登录后，会在首页工作区选择器中看到获授权的工作区。CSV 导出会对所有单元格加引号，并中和电子表格公式前缀，降低导出文件的公式注入风险。
-
-## Arc Testnet 配置
-
-| 项目 | 值 |
-| --- | --- |
-| Chain ID | `5042002` |
-| RPC | `https://rpc.testnet.arc.network` |
-| Explorer | `https://testnet.arcscan.app` |
-| Memo | `0x5294E9927c3306DcBaDb03fe70b92e01cCede505` |
-| USDC ERC-20 interface | `0x3600000000000000000000000000000000000000` |
-| EURC | `0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a` |
-
-USDC 是 Arc 的原生 Gas 资产。原生接口内部使用 18 位精度，应用层 ERC-20 接口使用 6 位精度，两者共享同一余额。本项目遵循 Arc 的建议，在应用层统一使用 6 位 ERC-20 接口。
-
-## 使用流程
-
-1. 商户连接钱包，填写金额、收款地址、币种、备注与到期日。
-2. 应用取得当前 Arc 区块高度，将发票和校验哈希写入服务端数据库。
-3. 商户复制付款链接发给付款方。
-4. 付款方打开链接，切换到 Arc Testnet 并签名交易。
-5. 应用等待 1 个区块确认，展示 ArcScan 回执。
-6. Arc 索引器按区块游标发现 Memo 事件，自动把发票更新为 `Paid`。
-
-测试网资产没有真实价值。不要在项目中粘贴或保存私钥。
-
-## 下一阶段
-
-钱包鉴权、团队角色、托管数据库连接层、独立 Worker、Webhook 和 CSV 导出已经完成。下一阶段按以下顺序推进：
-
-1. 在目标云平台配置真实 `DATABASE_URL`，运行独立 Web 与 Worker 实例。
-2. 增加邀请接受流程、工作区命名、投递记录和 Webhook 死信重放。
-3. 增加限流、集中日志、告警、退款状态机和数据库迁移流水线。
-4. 接入 Circle App Kit，支持从其他网络发起 USDC 跨链结算。
-
-详细设计见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
-
-## 官方资料
-
-- [Arc Transaction Memos](https://docs.arc.io/arc/concepts/transaction-memos)
+- [Arc transaction memos](https://docs.arc.io/arc/concepts/transaction-memos)
 - [Send USDC with a transaction memo](https://docs.arc.io/arc/tutorials/send-usdc-with-transaction-memo)
+- [Arc RPC endpoints](https://docs.arc.io/arc/references/rpc-endpoints)
 - [Arc contract addresses](https://docs.arc.io/arc/references/contract-addresses)
 - [Circle App Kit](https://docs.arc.io/app-kit)
+
+Testnet USDC and EURC have no real-world value.
