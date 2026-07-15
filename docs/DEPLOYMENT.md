@@ -58,6 +58,24 @@ The application emits baseline `nosniff`, clickjacking, referrer, and browser-pe
 
 The current schema is initialized idempotently on the first database-backed request. Before multiple production releases introduce schema changes, replace this bootstrap behavior with ordered, versioned migrations.
 
+## Render Blueprint
+
+The repository-root `render.yaml` provisions the production topology on Render:
+
+- `invoice-rail-web`: a Docker web service with `/api/health` readiness checks;
+- `invoice-rail-worker`: the same Docker image running `node scripts/run-indexer.mjs`;
+- `invoice-rail-db`: PostgreSQL 17 with public inbound access disabled.
+
+The Blueprint uses Render service references instead of committed credentials:
+
+- `DATABASE_URL` comes from the database's private connection string;
+- `APP_ORIGIN` and `INVOICE_RAIL_APP_URL` come from the web service's `RENDER_EXTERNAL_URL`;
+- Render generates `INDEXER_SECRET` once and shares it with the worker.
+
+Both application services deploy only after the linked GitHub checks pass. The committed baseline uses Starter compute for the web and worker plus the smallest persistent paid PostgreSQL plan. Review Render's current pricing in the confirmation screen before applying the Blueprint.
+
+To deploy, open Render's **Blueprints** page, create a Blueprint from the GitHub repository, and select the root `render.yaml`. Do not create the three resources manually in parallel with the Blueprint because matching service names can cause conflicts.
+
 ## Release verification
 
 Run these checks before every deployment:

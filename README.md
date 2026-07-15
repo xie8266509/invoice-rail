@@ -74,7 +74,7 @@ pnpm indexer
 
 ## 生产部署
 
-项目包含可复用的多阶段 `Dockerfile` 和 `compose.yaml`。同一个镜像分别运行：
+项目包含可复用的多阶段 `Dockerfile`、`compose.yaml` 和 Render Blueprint `render.yaml`。同一个镜像分别运行：
 
 - Next.js Web/API 服务；
 - Arc 索引与 Webhook 投递 Worker；
@@ -90,6 +90,8 @@ curl --fail http://localhost:3000/api/health
 ```
 
 `/api/health` 会检查应用能否访问并初始化数据库。云平台部署拓扑、环境变量和发布验收步骤见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
+
+Render Blueprint 会创建一个 Web 服务、一个持续运行的 Worker 和一个仅允许私网访问的 PostgreSQL 数据库。`APP_ORIGIN`、Worker URL 和数据库连接串由 Render 服务引用自动注入，`INDEXER_SECRET` 由 Render 生成并安全共享。
 
 ## 钱包登录与 Webhook
 
