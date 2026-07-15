@@ -1,0 +1,10 @@
+.next/
+node_modules/
+coverage/
+.env*
+!.env.example
+!.env.docker.example
+.data/
+*.log
+.DS_Store
+pnpm-debug.log*

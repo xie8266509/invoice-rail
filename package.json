@@ -1,0 +1,39 @@
+{
+  "name": "invoice-rail",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "start:worker": "node scripts/run-indexer.mjs",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:auth": "node scripts/test-auth.mjs",
+    "test:watch": "vitest",
+    "indexer": "node scripts/run-indexer.mjs",
+    "verify:invoice": "node scripts/verify-invoice.mjs",
+    "check": "pnpm test && pnpm lint && pnpm build"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.4",
+    "@phosphor-icons/react": "2.1.10",
+    "@radix-ui/themes": "3.3.0",
+    "next": "16.2.10",
+    "pg": "8.22.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "viem": "2.55.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "8.20.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.2.10",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
