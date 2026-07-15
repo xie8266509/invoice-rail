@@ -2,8 +2,16 @@ import type { Address } from "viem";
 
 export const ARC_CHAIN_ID = 5_042_002;
 export const ARC_CHAIN_ID_HEX = "0x4cef52";
-export const ARC_RPC_URL =
-  process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.network";
+const configuredArcRpcUrl = process.env.NEXT_PUBLIC_ARC_RPC_URL?.trim();
+
+export const ARC_RPC_URLS = Array.from(new Set([
+  configuredArcRpcUrl,
+  "https://rpc.drpc.testnet.arc.network",
+  "https://rpc.blockdaemon.testnet.arc.network",
+  "https://rpc.testnet.arc.network",
+].filter((url): url is string => Boolean(url))));
+
+export const ARC_RPC_URL = ARC_RPC_URLS[0];
 export const ARC_EXPLORER_URL = "https://testnet.arcscan.app";
 
 export const MEMO_CONTRACT_ADDRESS =

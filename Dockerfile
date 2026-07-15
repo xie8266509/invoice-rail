@@ -12,7 +12,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
-ARG NEXT_PUBLIC_ARC_RPC_URL=https://rpc.testnet.arc.network
+ARG NEXT_PUBLIC_ARC_RPC_URL=https://rpc.drpc.testnet.arc.network
 ENV NEXT_PUBLIC_ARC_RPC_URL=$NEXT_PUBLIC_ARC_RPC_URL
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Address } from "viem";
+import { arcErrorMessage } from "@/lib/arc-error";
 import { ARC_CHAIN_ID } from "@/lib/constants";
 import {
   getTokenBalances,
@@ -23,8 +24,7 @@ type WalletState = {
 };
 
 function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return "The wallet request could not be completed.";
+  return arcErrorMessage(error, "The wallet request could not be completed.");
 }
 
 export function useWallet() {

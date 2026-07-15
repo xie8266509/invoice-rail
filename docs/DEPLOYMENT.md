@@ -17,6 +17,7 @@ Both processes can use the same container image. The web process starts with `no
 | `INVOICE_RAIL_APP_URL` | worker | Internal or public base URL of the web service. |
 
 Optional variables are documented in `.env.example`. `NEXT_PUBLIC_ARC_RPC_URL` is embedded in the browser bundle at build time, so set it as a container build argument as well as a runtime variable.
+The application automatically falls back across the public dRPC, Blockdaemon, and Circle endpoints for read operations. Wallets keep their own network configuration, so an already-added Arc Testnet network may still need its RPC URL changed manually if that provider is rate-limited.
 
 ## Local production-like stack
 

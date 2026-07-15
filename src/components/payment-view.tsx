@@ -21,6 +21,7 @@ import {
 } from "@radix-ui/themes";
 import type { Hex } from "viem";
 import { findInvoicePayment, payInvoice } from "@/lib/arc";
+import { arcErrorMessage } from "@/lib/arc-error";
 import { ARC_EXPLORER_URL } from "@/lib/constants";
 import {
   formatAddress,
@@ -43,8 +44,7 @@ function readableDate(value: string): string {
 }
 
 function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return "The payment could not be completed.";
+  return arcErrorMessage(error, "The payment could not be completed.");
 }
 
 export function PaymentView({ invoice, wallet, onPaid }: PaymentViewProps) {

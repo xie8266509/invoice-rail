@@ -23,7 +23,7 @@ services:
       - key: INDEXER_SECRET
         generateValue: true
       - key: NEXT_PUBLIC_ARC_RPC_URL
-        value: https://rpc.testnet.arc.network
+        value: https://rpc.drpc.testnet.arc.network
 
   - type: worker
     name: invoice-rail-worker
