@@ -11,7 +11,7 @@ import {
 } from "viem";
 import { arcTestnet } from "viem/chains";
 
-const RPC_URL = process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.network";
+const RPC_URL = process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.drpc.testnet.arc.network";
 const MEMO_ADDRESS = "0x5294E9927c3306DcBaDb03fe70b92e01cCede505";
 const TOKENS = {
   USDC: "0x3600000000000000000000000000000000000000",

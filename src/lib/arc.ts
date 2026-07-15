@@ -3,6 +3,7 @@ import {
   createWalletClient,
   custom,
   erc20Abi,
+  fallback,
   formatUnits,
   getAddress,
   http,
@@ -14,7 +15,7 @@ import { memoAbi } from "@/lib/abis";
 import {
   ARC_CHAIN_ID_HEX,
   ARC_EXPLORER_URL,
-  ARC_RPC_URL,
+  ARC_RPC_URLS,
   MEMO_CONTRACT_ADDRESS,
   TOKENS,
   type TokenSymbol,
@@ -31,7 +32,9 @@ import type { EthereumProvider } from "@/types/ethereum";
 
 export const publicClient = createPublicClient({
   chain: arcTestnet,
-  transport: http(ARC_RPC_URL),
+  transport: fallback(
+    ARC_RPC_URLS.map((url) => http(url, { retryCount: 0, timeout: 5_000 })),
+  ),
 });
 
 export type WalletSnapshot = {
@@ -82,7 +85,7 @@ export async function switchToArcTestnet(): Promise<void> {
           chainId: ARC_CHAIN_ID_HEX,
           chainName: "Arc Testnet",
           nativeCurrency: { name: "USD Coin", symbol: "USDC", decimals: 18 },
-          rpcUrls: [ARC_RPC_URL],
+          rpcUrls: ARC_RPC_URLS,
           blockExplorerUrls: [ARC_EXPLORER_URL],
         },
       ],
