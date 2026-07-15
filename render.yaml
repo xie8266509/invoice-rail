@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: invoice-rail-web
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: APP_ORIGIN
+        fromService:
+          type: web
+          name: invoice-rail-web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: DATABASE_URL
+        fromDatabase:
+          name: invoice-rail-db
+          property: connectionString
+      - key: DATABASE_POOL_SIZE
+        value: "10"
+      - key: INDEXER_SECRET
+        generateValue: true
+      - key: NEXT_PUBLIC_ARC_RPC_URL
+        value: https://rpc.testnet.arc.network
+
+  - type: worker
+    name: invoice-rail-worker
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: node scripts/run-indexer.mjs
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: INVOICE_RAIL_APP_URL
+        fromService:
+          type: web
+          name: invoice-rail-web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: INDEXER_SECRET
+        fromService:
+          type: web
+          name: invoice-rail-web
+          envVarKey: INDEXER_SECRET
+      - key: INDEXER_INTERVAL_MS
+        value: "5000"
+
+databases:
+  - name: invoice-rail-db
+    plan: basic-256mb
+    region: oregon
+    postgresMajorVersion: "17"
+    databaseName: invoice_rail
+    user: invoice_rail
+    ipAllowList: []
