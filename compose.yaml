@@ -30,6 +30,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-invoice_rail}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB:-invoice_rail}
       DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
       INDEXER_SECRET: ${INDEXER_SECRET:?Set INDEXER_SECRET in .env.docker}
+      METRICS_SECRET: ${METRICS_SECRET:?Set METRICS_SECRET in .env.docker}
+      INDEXER_STALE_AFTER_MS: ${INDEXER_STALE_AFTER_MS:-60000}
       NEXT_PUBLIC_ARC_RPC_URL: ${NEXT_PUBLIC_ARC_RPC_URL:-https://rpc.testnet.arc.network}
     depends_on:
       database:

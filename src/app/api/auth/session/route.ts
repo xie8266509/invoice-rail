@@ -6,6 +6,13 @@ import {
   SESSION_COOKIE_NAME,
   sessionCookieOptions,
 } from "@/lib/server/auth";
+import { logEvent, requestId, requestLogData, withRequestId } from "@/lib/server/observability";
+import {
+  createRateLimitResponse,
+  enforceRateLimit,
+  RATE_LIMITS,
+  RateLimitError,
+} from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,11 +23,29 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const id = requestId(request);
   if (!hasValidRequestOrigin(request)) {
-    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    return withRequestId(
+      NextResponse.json({ error: "Invalid request origin." }, { status: 403 }),
+      id,
+    );
   }
-  await revokeCurrentSession(request);
-  const response = NextResponse.json({ authenticated: false });
-  response.cookies.set(SESSION_COOKIE_NAME, "", { ...sessionCookieOptions(), maxAge: 0 });
-  return response;
+  try {
+    await enforceRateLimit(request, RATE_LIMITS.sessionWrite);
+    await revokeCurrentSession(request);
+    const response = NextResponse.json({ authenticated: false });
+    response.cookies.set(SESSION_COOKIE_NAME, "", { ...sessionCookieOptions(), maxAge: 0 });
+    logEvent("info", "auth.session.revoked", requestLogData(request, id));
+    return withRequestId(response, id);
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      logEvent("warn", "auth.session.rate_limited", requestLogData(request, id));
+      return withRequestId(createRateLimitResponse(error), id);
+    }
+    logEvent("error", "auth.session.revoke_failed", { ...requestLogData(request, id), error });
+    return withRequestId(
+      NextResponse.json({ error: "Sign out failed." }, { status: 500 }),
+      id,
+    );
+  }
 }

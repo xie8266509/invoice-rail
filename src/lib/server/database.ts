@@ -4,120 +4,10 @@ import { mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
-
-const schema = `
-  CREATE TABLE IF NOT EXISTS invoices (
-    id TEXT PRIMARY KEY,
-    share_id TEXT UNIQUE NOT NULL,
-    merchant_address TEXT NOT NULL,
-    merchant_name TEXT NOT NULL,
-    recipient TEXT NOT NULL,
-    amount TEXT NOT NULL,
-    token TEXT NOT NULL CHECK (token IN ('USDC', 'EURC')),
-    memo TEXT NOT NULL,
-    due_date TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    created_block BIGINT,
-    status TEXT NOT NULL CHECK (status IN ('open', 'processing', 'paid', 'expired')),
-    tx_hash TEXT,
-    paid_at TEXT,
-    memo_id TEXT UNIQUE NOT NULL,
-    call_data_hash TEXT NOT NULL,
-    token_address TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  );
-
-  CREATE INDEX IF NOT EXISTS invoices_merchant_address_idx
-    ON invoices (LOWER(merchant_address), created_at DESC);
-  CREATE INDEX IF NOT EXISTS invoices_status_created_block_idx
-    ON invoices (status, created_block);
-
-  CREATE TABLE IF NOT EXISTS payments (
-    transaction_hash TEXT NOT NULL,
-    log_index INTEGER NOT NULL,
-    invoice_id TEXT NOT NULL REFERENCES invoices(id),
-    payer TEXT NOT NULL,
-    block_number BIGINT NOT NULL,
-    paid_at TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    PRIMARY KEY (transaction_hash, log_index)
-  );
-
-  CREATE TABLE IF NOT EXISTS indexer_cursors (
-    name TEXT PRIMARY KEY,
-    next_block BIGINT NOT NULL,
-    updated_at TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS auth_challenges (
-    id_hash TEXT PRIMARY KEY,
-    address TEXT NOT NULL,
-    message TEXT NOT NULL,
-    expires_at TEXT NOT NULL,
-    consumed_at TEXT,
-    created_at TEXT NOT NULL
-  );
-
-  CREATE INDEX IF NOT EXISTS auth_challenges_address_idx
-    ON auth_challenges (LOWER(address), created_at DESC);
-
-  CREATE TABLE IF NOT EXISTS auth_sessions (
-    token_hash TEXT PRIMARY KEY,
-    merchant_address TEXT NOT NULL,
-    expires_at TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    last_seen_at TEXT NOT NULL
-  );
-
-  CREATE INDEX IF NOT EXISTS auth_sessions_expiry_idx
-    ON auth_sessions (expires_at);
-
-  CREATE TABLE IF NOT EXISTS team_members (
-    workspace_address TEXT NOT NULL,
-    member_address TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('editor', 'viewer')),
-    invited_by TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    PRIMARY KEY (workspace_address, member_address)
-  );
-
-  CREATE INDEX IF NOT EXISTS team_members_member_idx
-    ON team_members (LOWER(member_address), created_at DESC);
-
-  CREATE TABLE IF NOT EXISTS webhook_endpoints (
-    id TEXT PRIMARY KEY,
-    merchant_address TEXT NOT NULL,
-    url TEXT NOT NULL,
-    secret TEXT NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    UNIQUE (merchant_address, url)
-  );
-
-  CREATE INDEX IF NOT EXISTS webhook_endpoints_merchant_idx
-    ON webhook_endpoints (LOWER(merchant_address), active);
-
-  CREATE TABLE IF NOT EXISTS webhook_deliveries (
-    id TEXT PRIMARY KEY,
-    endpoint_id TEXT NOT NULL REFERENCES webhook_endpoints(id) ON DELETE CASCADE,
-    event_type TEXT NOT NULL,
-    invoice_id TEXT NOT NULL REFERENCES invoices(id),
-    payload TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('pending', 'delivered', 'failed')),
-    attempts INTEGER NOT NULL DEFAULT 0,
-    next_attempt_at TEXT NOT NULL,
-    last_error TEXT,
-    created_at TEXT NOT NULL,
-    delivered_at TEXT,
-    UNIQUE (endpoint_id, event_type, invoice_id)
-  );
-
-  CREATE INDEX IF NOT EXISTS webhook_deliveries_pending_idx
-    ON webhook_deliveries (status, next_attempt_at);
-`;
-const SCHEMA_VERSION = 3;
+import {
+  LATEST_SCHEMA_VERSION,
+  runMigrations,
+} from "@/lib/server/migrations";
 
 export type Database = {
   query<Row extends object>(text: string, params?: unknown[]): Promise<{ rows: Row[] }>;
@@ -211,7 +101,7 @@ async function createDatabase(): Promise<Database> {
 export async function getDatabase(): Promise<Database> {
   if (
     databaseGlobal.invoiceRailDatabase &&
-    databaseGlobal.invoiceRailSchemaVersion === SCHEMA_VERSION
+    databaseGlobal.invoiceRailSchemaVersion === LATEST_SCHEMA_VERSION
   ) {
     return databaseGlobal.invoiceRailDatabase;
   }
@@ -221,9 +111,9 @@ export async function getDatabase(): Promise<Database> {
       ? Promise.resolve(databaseGlobal.invoiceRailDatabase)
       : createDatabase();
     databaseGlobal.invoiceRailDatabaseInitializing = databasePromise.then(async (database) => {
-      await database.exec(schema);
+      const migrationStatus = await runMigrations(database);
       databaseGlobal.invoiceRailDatabase = database;
-      databaseGlobal.invoiceRailSchemaVersion = SCHEMA_VERSION;
+      databaseGlobal.invoiceRailSchemaVersion = migrationStatus.currentVersion;
       databaseGlobal.invoiceRailDatabaseInitializing = undefined;
       return database;
     }).catch((error) => {

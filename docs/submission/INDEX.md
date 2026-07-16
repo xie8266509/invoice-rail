@@ -14,6 +14,7 @@ This folder contains reviewer-ready copy derived from the deployed product and v
 ## Canonical links
 
 - Live: https://invoice-rail-web.onrender.com
+- Demo video: https://www.youtube.com/watch?v=zqCK5EUnowc
 - GitHub: https://github.com/xie8266509/invoice-rail
 - Verified transaction: https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
 - Project contact: https://github.com/xie8266509

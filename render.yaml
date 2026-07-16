@@ -22,6 +22,10 @@ services:
         value: "10"
       - key: INDEXER_SECRET
         generateValue: true
+      - key: METRICS_SECRET
+        generateValue: true
+      - key: INDEXER_STALE_AFTER_MS
+        value: "60000"
       - key: NEXT_PUBLIC_ARC_RPC_URL
         value: https://rpc.drpc.testnet.arc.network
 
