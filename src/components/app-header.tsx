@@ -25,6 +25,7 @@ import { formatAddress } from "@/lib/invoice";
 import { useThemeMode } from "@/components/theme-shell";
 import type { TokenBalances } from "@/lib/arc";
 import type { MerchantSessionStatus } from "@/hooks/use-merchant-session";
+import type { WalletProviderSummary } from "@/hooks/use-wallet";
 
 type AppHeaderProps = {
   account?: Address;
@@ -34,7 +35,10 @@ type AppHeaderProps = {
   isArc: boolean;
   rpcOnline: boolean;
   balanceWarning?: string;
+  wallets: WalletProviderSummary[];
+  selectedWalletId?: string;
   onConnect: () => void;
+  onSelectWallet: (id: string) => void;
   onSwitchNetwork: () => void;
   authStatus?: MerchantSessionStatus;
   onSignIn?: () => void;
@@ -53,7 +57,10 @@ export function AppHeader({
   isArc,
   rpcOnline,
   balanceWarning,
+  wallets,
+  selectedWalletId,
   onConnect,
+  onSelectWallet,
   onSwitchNetwork,
   authStatus,
   onSignIn,
@@ -181,6 +188,41 @@ export function AppHeader({
                   {balanceWarning}
                 </Text>
               ) : null}
+              {wallets.length > 1 ? (
+                <>
+                  <DropdownMenu.Separator />
+                  <Text size="1" color="gray" className="wallet-menu-label">
+                    Wallet provider
+                  </Text>
+                  {wallets.map((wallet) => (
+                    <DropdownMenu.Item key={wallet.id} onSelect={() => onSelectWallet(wallet.id)}>
+                      <Wallet size={15} />
+                      {wallet.name}
+                      {wallet.id === selectedWalletId ? <Check size={15} className="menu-check" /> : null}
+                    </DropdownMenu.Item>
+                  ))}
+                </>
+              ) : null}
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        ) : wallets.length > 1 ? (
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              <Button disabled={connecting}>
+                <Wallet size={17} />
+                {connecting ? "Connecting..." : "Connect wallet"}
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content align="end">
+              <Text size="1" color="gray" className="wallet-menu-label">
+                Choose a wallet
+              </Text>
+              {wallets.map((wallet) => (
+                <DropdownMenu.Item key={wallet.id} onSelect={() => onSelectWallet(wallet.id)}>
+                  <Wallet size={15} />
+                  {wallet.name}
+                </DropdownMenu.Item>
+              ))}
             </DropdownMenu.Content>
           </DropdownMenu.Root>
         ) : (

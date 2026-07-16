@@ -45,7 +45,7 @@ export function InvoiceApp() {
   const searchParams = useSearchParams();
   const encodedInvoice = searchParams.get("invoice");
   const wallet = useWallet();
-  const merchantSession = useMerchantSession(wallet.account);
+  const merchantSession = useMerchantSession(wallet.account, wallet.provider);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceAccess[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Address>();
@@ -230,7 +230,10 @@ export function InvoiceApp() {
           isArc={wallet.isArc}
           rpcOnline={wallet.rpcOnline}
           balanceWarning={wallet.balanceWarning}
+          wallets={wallet.wallets}
+          selectedWalletId={wallet.selectedWalletId}
           onConnect={() => wallet.connect().catch(() => undefined)}
+          onSelectWallet={(id) => wallet.selectWallet(id).catch(() => undefined)}
           onSwitchNetwork={wallet.switchNetwork}
         />
         <PaymentView
@@ -252,7 +255,10 @@ export function InvoiceApp() {
         isArc={wallet.isArc}
         rpcOnline={wallet.rpcOnline}
         balanceWarning={wallet.balanceWarning}
+        wallets={wallet.wallets}
+        selectedWalletId={wallet.selectedWalletId}
         onConnect={() => wallet.connect().catch(() => undefined)}
+        onSelectWallet={(id) => wallet.selectWallet(id).catch(() => undefined)}
         onSwitchNetwork={wallet.switchNetwork}
         authStatus={merchantSession.status}
         onSignIn={() => {

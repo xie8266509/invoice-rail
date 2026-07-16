@@ -114,7 +114,7 @@ export function PaymentView({ invoice, wallet, onPaid }: PaymentViewProps) {
     setStatus("processing");
     setError(undefined);
     try {
-      const result = await payInvoice(invoice);
+      const result = await payInvoice(wallet.provider, invoice);
       const paidAt = new Date().toISOString();
       setStatus("paid");
       setTxHash(result.hash);

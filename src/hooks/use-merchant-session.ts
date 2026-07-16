@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAddress, type Address } from "viem";
 import { signMerchantMessage } from "@/lib/arc";
+import type { EthereumProvider } from "@/types/ethereum";
 
 export type MerchantSessionStatus =
   | "idle"
@@ -25,7 +26,7 @@ async function responseBody(response: Response): Promise<Record<string, unknown>
   return response.json() as Promise<Record<string, unknown>>;
 }
 
-export function useMerchantSession(account?: Address) {
+export function useMerchantSession(account?: Address, provider?: EthereumProvider) {
   const [state, setState] = useState<SessionState>({ status: "idle" });
 
   const checkSession = useCallback(async (expectedAccount: Address) => {
@@ -89,7 +90,7 @@ export function useMerchantSession(account?: Address) {
         throw new Error(typeof challenge.error === "string" ? challenge.error : "Sign-in challenge failed.");
       }
 
-      const signature = await signMerchantMessage(account, challenge.message);
+      const signature = await signMerchantMessage(provider, account, challenge.message);
       const verifyResponse = await fetch("/api/auth/verify", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -110,7 +111,7 @@ export function useMerchantSession(account?: Address) {
       setState({ status: "unauthenticated", error: errorMessage(error) });
       throw error;
     }
-  }, [account, checkSession]);
+  }, [account, checkSession, provider]);
 
   return {
     ...state,
