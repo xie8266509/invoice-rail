@@ -49,15 +49,18 @@ export type TokenBalanceSnapshot = {
   unavailable: TokenSymbol[];
 };
 
-function requireProvider(): EthereumProvider {
-  if (typeof window === "undefined" || !window.ethereum) {
+function requireProvider(provider?: EthereumProvider): EthereumProvider {
+  if (!provider) {
     throw new Error("Install MetaMask, Rabby, Coinbase Wallet, or Rainbow to continue.");
   }
-  return window.ethereum;
+  return provider;
 }
 
-export async function getWalletSnapshot(requestAccess = false): Promise<WalletSnapshot> {
-  const provider = requireProvider();
+export async function getWalletSnapshot(
+  injectedProvider: EthereumProvider | undefined,
+  requestAccess = false,
+): Promise<WalletSnapshot> {
+  const provider = requireProvider(injectedProvider);
   const accounts = (await provider.request({
     method: requestAccess ? "eth_requestAccounts" : "eth_accounts",
   })) as string[];
@@ -68,8 +71,8 @@ export async function getWalletSnapshot(requestAccess = false): Promise<WalletSn
   };
 }
 
-export async function switchToArcTestnet(): Promise<void> {
-  const provider = requireProvider();
+export async function switchToArcTestnet(injectedProvider?: EthereumProvider): Promise<void> {
+  const provider = requireProvider(injectedProvider);
   try {
     await provider.request({
       method: "wallet_switchEthereumChain",
@@ -125,8 +128,12 @@ export async function getArcBlockNumber(): Promise<bigint> {
   return publicClient.getBlockNumber();
 }
 
-export async function signMerchantMessage(account: Address, message: string): Promise<Hex> {
-  const provider = requireProvider();
+export async function signMerchantMessage(
+  injectedProvider: EthereumProvider | undefined,
+  account: Address,
+  message: string,
+): Promise<Hex> {
+  const provider = requireProvider(injectedProvider);
   const walletClient = createWalletClient({
     account,
     chain: arcTestnet,
@@ -135,13 +142,16 @@ export async function signMerchantMessage(account: Address, message: string): Pr
   return walletClient.signMessage({ account, message });
 }
 
-export async function payInvoice(invoice: ShareableInvoice): Promise<{
+export async function payInvoice(
+  injectedProvider: EthereumProvider | undefined,
+  invoice: ShareableInvoice,
+): Promise<{
   hash: Hex;
   blockNumber: bigint;
 }> {
-  const provider = requireProvider();
-  await switchToArcTestnet();
-  const snapshot = await getWalletSnapshot(true);
+  const provider = requireProvider(injectedProvider);
+  await switchToArcTestnet(provider);
+  const snapshot = await getWalletSnapshot(provider, true);
   if (!snapshot.account) throw new Error("Connect a wallet before paying.");
 
   const token = TOKENS[invoice.token];

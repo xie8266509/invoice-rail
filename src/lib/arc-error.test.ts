@@ -11,4 +11,9 @@ describe("Arc RPC errors", () => {
     expect(arcErrorMessage(new Error("User rejected the request."), "fallback"))
       .toBe("User rejected the request.");
   });
+
+  it("reads EIP-1193 provider errors that are not Error instances", () => {
+    expect(arcErrorMessage({ code: -32011, message: "request limit reached" }, "fallback"))
+      .toContain("change the Arc Testnet RPC URL");
+  });
 });

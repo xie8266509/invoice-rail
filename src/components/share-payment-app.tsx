@@ -22,7 +22,10 @@ export function SharePaymentApp({ invoice }: { invoice: Invoice }) {
         isArc={wallet.isArc}
         rpcOnline={wallet.rpcOnline}
         balanceWarning={wallet.balanceWarning}
+        wallets={wallet.wallets}
+        selectedWalletId={wallet.selectedWalletId}
         onConnect={() => wallet.connect().catch(() => undefined)}
+        onSelectWallet={(id) => wallet.selectWallet(id).catch(() => undefined)}
         onSwitchNetwork={wallet.switchNetwork}
       />
       <PaymentView invoice={invoice} wallet={wallet} onPaid={requestIndexing} />
