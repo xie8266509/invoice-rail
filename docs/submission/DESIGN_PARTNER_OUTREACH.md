@@ -10,7 +10,7 @@ Do not present these as customers until they explicitly agree to participate.
 
 ## Short outreach message
 
-> I am building Invoice Rail, a non-custodial USDC/EURC invoicing workflow on Arc. It binds an invoice reference to the token transfer through Arc Memo, then independently verifies settlement and can send a signed webhook. The public Alpha already has a verified USDC test payment. I am looking for three design partners for a 30-minute workflow review—no purchase or wallet deposit required. Would you be open to showing me how you currently issue and reconcile stablecoin invoices?
+> I am building Invoice Rail, a non-custodial USDC/EURC invoicing workflow on Arc. It binds an invoice reference to the token transfer through Arc Memo, then independently verifies settlement and can send a signed webhook. The public Alpha now has wallet-signed USDC and EURC settlement proofs on Arc Testnet. I am looking for three design partners for a 30-minute workflow review—no purchase or wallet deposit required. Would you be open to showing me how you currently issue and reconcile stablecoin invoices?
 
 ## Interview guide
 
@@ -29,6 +29,8 @@ Do not present these as customers until they explicitly agree to participate.
 
 | Slot | Profile | Contact | Status | Main pain | Pilot condition |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Agency / studio | TBD | Not contacted | TBD | TBD |
-| 2 | Crypto-native service firm | TBD | Not contacted | TBD | TBD |
-| 3 | Platform / marketplace | TBD | Not contacted | TBD | TBD |
+| 1 | Scheduled-payment builder | Beyaz D. / PayWhen | Outreach prepared | Scheduling vs. invoice obligation IDs | Test scheduling/cancellation and review Memo receipt evidence |
+| 2 | Operations / treasury builder | Victor Okeke / Sweep Console | Outreach prepared | Idempotent settlement events and accounting evidence | Review webhook and reconciliation workflow |
+| 3 | Business milestone builder | Fatih Karaca / ArcBusiness | Outreach prepared | Milestone IDs, partial payments, and bilateral evidence | Review milestone-to-invoice mapping and receipt UX |
+
+These are prospective reviewers discovered in the Arc builder community. They are not customers or design partners unless they explicitly opt in.
