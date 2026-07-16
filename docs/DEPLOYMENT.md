@@ -15,6 +15,7 @@ Both processes can use the same container image. The web process starts with `no
 | `DATABASE_URL` | web | PostgreSQL connection string. Production must not use the local PGlite default. |
 | `INDEXER_SECRET` | web, worker | Shared high-entropy bearer secret protecting `/api/indexer`. |
 | `INVOICE_RAIL_APP_URL` | worker | Internal or public base URL of the web service. |
+| `METRICS_SECRET` | web | Separate bearer secret protecting `/api/metrics`. |
 
 Optional variables are documented in `.env.example`. `NEXT_PUBLIC_ARC_RPC_URL` is embedded in the browser bundle at build time, so set it as a container build argument as well as a runtime variable.
 The application automatically falls back across the public dRPC, Blockdaemon, and Circle endpoints for read operations. Wallets keep their own network configuration, so an already-added Arc Testnet network may still need its RPC URL changed manually if that provider is rate-limited.
@@ -57,7 +58,7 @@ Use a provider that supports a containerized web service, a continuously running
 
 The application emits baseline `nosniff`, clickjacking, referrer, and browser-permission security headers. Add HSTS at the TLS-terminating load balancer after the final HTTPS domain is stable.
 
-The current schema is initialized idempotently on the first database-backed request. Before multiple production releases introduce schema changes, replace this bootstrap behavior with ordered, versioned migrations.
+The application runs ordered, checksummed migrations before the first database-backed request. Migration DDL and version recording are transactional. Follow the rehearsal and rollback procedure in [OPERATIONS.md](OPERATIONS.md) before deploying a schema change.
 
 ## Render Blueprint
 
@@ -88,8 +89,9 @@ pnpm check
 After deployment:
 
 1. Confirm `/api/health` returns HTTP `200`.
-2. Sign in with a fresh wallet challenge.
-3. Create an invoice and open its short payment link in a private browser session.
-4. Complete a small Arc Testnet payment.
-5. Confirm the worker marks the invoice paid and delivers any configured webhook.
-6. Restart the web instance and confirm the invoice is still present.
+2. Run `METRICS_SECRET=... INVOICE_RAIL_APP_URL=... pnpm ops:check`.
+3. Sign in with a fresh wallet challenge.
+4. Create an invoice and open its short payment link in a private browser session.
+5. Complete a small Arc Testnet payment.
+6. Confirm the worker marks the invoice paid and delivers any configured webhook.
+7. Restart the web instance and confirm the invoice, migration version, cursor, and heartbeat persist.

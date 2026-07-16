@@ -13,7 +13,9 @@
     "test:auth": "node scripts/test-auth.mjs",
     "test:watch": "vitest",
     "indexer": "node scripts/run-indexer.mjs",
+    "ops:check": "node scripts/check-operations.mjs",
     "verify:invoice": "node scripts/verify-invoice.mjs",
+    "verify:assets": "node scripts/verify-arc-assets.mjs",
     "check": "pnpm test && pnpm lint && pnpm build"
   },
   "dependencies": {
@@ -24,6 +26,7 @@
     "pg": "8.22.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
+    "server-only": "^0.0.1",
     "viem": "2.55.2"
   },
   "devDependencies": {

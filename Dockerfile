@@ -30,6 +30,7 @@ RUN groupadd --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-indexer.mjs ./scripts/run-indexer.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/check-operations.mjs ./scripts/check-operations.mjs
 
 USER nextjs
 EXPOSE 3000

@@ -5,6 +5,13 @@ import {
   hasValidRequestOrigin,
 } from "@/lib/server/auth";
 import { PermissionError, requireWorkspaceAccess } from "@/lib/server/permissions";
+import { logEvent, requestId, requestLogData, withRequestId } from "@/lib/server/observability";
+import {
+  createRateLimitResponse,
+  enforceRateLimit,
+  RATE_LIMITS,
+  RateLimitError,
+} from "@/lib/server/rate-limit";
 import {
   listTeamMembers,
   removeTeamMember,
@@ -14,33 +21,43 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function failure(error: unknown) {
+function failure(error: unknown, request: Request, id: string) {
+  if (error instanceof RateLimitError) {
+    logEvent("warn", "team.rate_limited", requestLogData(request, id));
+    return withRequestId(createRateLimitResponse(error), id);
+  }
   const status = error instanceof AuthenticationError
     ? 401
     : error instanceof PermissionError
       ? 403
       : 400;
   const reason = error instanceof Error ? error.message : "Team request failed.";
-  return NextResponse.json({ error: reason }, { status });
+  return withRequestId(NextResponse.json({ error: reason }, { status }), id);
 }
 
 export async function GET(request: Request) {
+  const id = requestId(request);
   try {
     const access = await requireWorkspaceAccess(request, "viewer");
-    return NextResponse.json({
+    return withRequestId(NextResponse.json({
       role: access.role,
       members: await listTeamMembers(access.workspaceAddress),
-    });
+    }), id);
   } catch (error) {
-    return failure(error);
+    return failure(error, request, id);
   }
 }
 
 export async function POST(request: Request) {
+  const id = requestId(request);
   if (!hasValidRequestOrigin(request)) {
-    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    return withRequestId(
+      NextResponse.json({ error: "Invalid request origin." }, { status: 403 }),
+      id,
+    );
   }
   try {
+    await enforceRateLimit(request, RATE_LIMITS.teamWrite);
     const access = await requireWorkspaceAccess(request, "owner");
     const body = await request.json() as { address?: unknown; role?: unknown };
     if (
@@ -48,7 +65,10 @@ export async function POST(request: Request) {
       !isAddress(body.address) ||
       (body.role !== "editor" && body.role !== "viewer")
     ) {
-      return NextResponse.json({ error: "A valid member address and role are required." }, { status: 400 });
+      return withRequestId(
+        NextResponse.json({ error: "A valid member address and role are required." }, { status: 400 }),
+        id,
+      );
     }
     const member = await setTeamMember({
       workspaceAddress: access.workspaceAddress,
@@ -56,27 +76,40 @@ export async function POST(request: Request) {
       role: body.role,
       invitedBy: access.actorAddress,
     });
-    return NextResponse.json({ member }, { status: 201 });
+    logEvent("info", "team.member.set", {
+      ...requestLogData(request, id),
+      role: member.role,
+    });
+    return withRequestId(NextResponse.json({ member }, { status: 201 }), id);
   } catch (error) {
-    return failure(error);
+    return failure(error, request, id);
   }
 }
 
 export async function DELETE(request: Request) {
+  const id = requestId(request);
   if (!hasValidRequestOrigin(request)) {
-    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    return withRequestId(
+      NextResponse.json({ error: "Invalid request origin." }, { status: 403 }),
+      id,
+    );
   }
   try {
+    await enforceRateLimit(request, RATE_LIMITS.teamWrite);
     const access = await requireWorkspaceAccess(request, "owner");
     const memberAddress = new URL(request.url).searchParams.get("member");
     if (!memberAddress || !isAddress(memberAddress)) {
-      return NextResponse.json({ error: "A valid member address is required." }, { status: 400 });
+      return withRequestId(
+        NextResponse.json({ error: "A valid member address is required." }, { status: 400 }),
+        id,
+      );
     }
     const deleted = await removeTeamMember(access.workspaceAddress, getAddress(memberAddress));
-    return deleted
+    if (deleted) logEvent("info", "team.member.removed", requestLogData(request, id));
+    return withRequestId(deleted
       ? NextResponse.json({ deleted: true })
-      : NextResponse.json({ error: "Team member not found." }, { status: 404 });
+      : NextResponse.json({ error: "Team member not found." }, { status: 404 }), id);
   } catch (error) {
-    return failure(error);
+    return failure(error, request, id);
   }
 }

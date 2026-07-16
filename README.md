@@ -78,6 +78,9 @@ The deployed topology uses one web service, one continuously running worker, and
 - PGlite for local development and PostgreSQL for production
 - Independent web and worker processes from one Docker image
 - RPC fallback and actionable wallet guidance for provider rate limits
+- Ordered, checksummed PostgreSQL migrations with transactional rollback
+- Database-backed API rate limits, structured request logs, and credential redaction
+- Protected operational metrics, persistent Indexer heartbeat, and alert rules
 - Responsive light and dark UI
 
 ## Security model
@@ -121,6 +124,8 @@ pnpm check
 pnpm test:auth
 pnpm indexer -- --once
 pnpm verify:invoice -- <invoice-id> <recipient> <amount> USDC
+pnpm verify:assets
+pnpm ops:check
 ```
 
 `pnpm check` runs the unit tests, ESLint, TypeScript checks, and the production build. `test:auth` uses temporary generated wallets and never reads a real private key.
@@ -137,11 +142,11 @@ The repository includes `Dockerfile`, `compose.yaml`, and `render.yaml`. Product
 | `INVOICE_RAIL_APP_URL` | worker | Base URL of the web service |
 | `NEXT_PUBLIC_ARC_RPC_URL` | build + web | Preferred Arc endpoint; the app keeps additional fallbacks |
 
-Deployment and rollback details are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Deployment details are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Migration, monitoring, alert, rollback, and incident procedures are in [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Roadmap
 
-1. Versioned migrations, monitoring, alerts, rate limits, and third-party security review.
+1. Complete the funded-wallet EURC regression and obtain a third-party security review; migrations, monitoring, alert rules, and rate limits are implemented.
 2. Invitation acceptance, workspace naming, delivery history, and webhook replay.
 3. Search, reporting, partial payments, overpayments, refunds, and accounting integrations.
 4. Circle App Kit collection from other chains with Arc as the canonical settlement and reconciliation layer.
@@ -152,6 +157,8 @@ Deployment and rollback details are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 - [Project overview](docs/submission/PROJECT_OVERVIEW.md)
 - [Architecture and technical design](docs/ARCHITECTURE.md)
 - [Demo script and shot list](docs/submission/DEMO_SCRIPT.md)
+- [Milestone 1 regression evidence](docs/REGRESSION_2026-07-15.md)
+- [Operations and incident runbook](docs/OPERATIONS.md)
 - [Day One Architects application](docs/submission/ARCHITECTS_APPLICATION.md)
 - [Arc Builders Fund / grant application](docs/submission/GRANT_APPLICATION.md)
 

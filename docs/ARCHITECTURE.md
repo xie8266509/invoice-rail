@@ -156,6 +156,11 @@ Additional tables hold the persistent index cursor, wallet challenges, hashed se
 - Payment insertion is idempotent on transaction hash plus log index.
 - Webhook delivery is idempotent per endpoint, event type, and invoice.
 - `/api/health` verifies database initialization and connectivity.
+- Ordered migrations record version, name, checksum, and application time, and fail closed on drift.
+- Database-backed fixed-window rate limits protect authentication and state-changing APIs across instances.
+- Structured JSON logs carry request IDs and redact credential-shaped fields.
+- `/api/metrics` exposes protected schema, invoice, webhook, cursor, and persistent worker-heartbeat metrics.
+- Critical migration, Indexer, webhook-backlog, and database-latency alerts make readiness fail closed.
 - GitHub Actions runs tests, lint, and the production build before merge.
 - Render runs separate web and worker instances from the same immutable Docker build.
 
@@ -170,7 +175,7 @@ Additional tables hold the persistent index cursor, wallet challenges, hashed se
 
 ## Next architecture milestones
 
-1. Ordered database migrations, structured logs, metrics, alerting, and service-level objectives.
+1. Complete funded-wallet EURC regression and external security review; ordered migrations, logs, metrics, alert rules, and API limits are implemented.
 2. Refund and exception state machine with immutable audit history.
 3. Webhook delivery console and dead-letter replay.
 4. Circle App Kit source-chain routing while retaining Arc as the canonical reconciliation layer.

@@ -9,11 +9,18 @@ import {
   listInvoicesByMerchant,
   storeInvoice,
 } from "@/lib/server/invoice-repository";
+import { logEvent, requestId, requestLogData, withRequestId } from "@/lib/server/observability";
 import {
   validateInvoiceInput,
   type Invoice,
   type InvoiceInput,
 } from "@/lib/invoice";
+import {
+  createRateLimitResponse,
+  enforceRateLimit,
+  RATE_LIMITS,
+  RateLimitError,
+} from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,22 +88,37 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const id = requestId(request);
   if (!hasValidRequestOrigin(request)) {
-    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    return withRequestId(
+      NextResponse.json({ error: "Invalid request origin." }, { status: 403 }),
+      id,
+    );
   }
   try {
+    await enforceRateLimit(request, RATE_LIMITS.invoiceWrite);
     const access = await requireWorkspaceAccess(request, "editor");
     const body = await request.json() as { invoice?: unknown };
     const invoice = parseInvoice(body.invoice);
     const stored = await storeInvoice(invoice, access.workspaceAddress);
-    return NextResponse.json({ invoice: stored }, { status: 201 });
+    logEvent("info", "invoice.created", {
+      ...requestLogData(request, id),
+      invoiceId: stored.id,
+      token: stored.token,
+    });
+    return withRequestId(NextResponse.json({ invoice: stored }, { status: 201 }), id);
   } catch (error) {
+    if (error instanceof RateLimitError) {
+      logEvent("warn", "invoice.create.rate_limited", requestLogData(request, id));
+      return withRequestId(createRateLimitResponse(error), id);
+    }
     if (error instanceof AuthenticationError) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+      return withRequestId(NextResponse.json({ error: error.message }, { status: 401 }), id);
     }
     if (error instanceof PermissionError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      return withRequestId(NextResponse.json({ error: error.message }, { status: 403 }), id);
     }
-    return NextResponse.json({ error: message(error) }, { status: 400 });
+    logEvent("warn", "invoice.create.failed", { ...requestLogData(request, id), error });
+    return withRequestId(NextResponse.json({ error: message(error) }, { status: 400 }), id);
   }
 }
