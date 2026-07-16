@@ -5,7 +5,7 @@ This folder contains reviewer-ready copy derived from the deployed product and v
 | Artifact | Purpose |
 | --- | --- |
 | [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | Hackathon page, one-pager, pitch, and product narrative |
-| [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | 75-second video narration, shot list, and live-demo fallback |
+| [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | 51-second product-film shot list and live-demo fallback |
 | [ARCHITECTS_APPLICATION.md](ARCHITECTS_APPLICATION.md) | Day One Architects nomination / spotlight answer bank |
 | [GRANT_APPLICATION.md](GRANT_APPLICATION.md) | Milestone-based Arc Builders Fund or ecosystem grant proposal |
 | [../ARCHITECTURE.md](../ARCHITECTURE.md) | Production architecture, sequence, security, and operations |

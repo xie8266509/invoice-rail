@@ -6,9 +6,10 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@remotion/captions": "4.0.489",
     "@remotion/cli": "4.0.489",
+    "@remotion/google-fonts": "4.0.489",
     "@remotion/media": "4.0.489",
+    "@remotion/transitions": "4.0.489",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.489"
@@ -22,6 +23,7 @@
     "typescript": "5.9.3"
   },
   "scripts": {
+    "audio:fetch": "bash scripts/fetch-audio.sh",
     "dev": "remotion studio",
     "build": "remotion bundle",
     "render": "remotion render InvoiceRailDemo out/invoice-rail-demo.mp4 --codec h264 --crf 20",
