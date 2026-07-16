@@ -1,346 +1,1132 @@
 import type { CSSProperties, ReactNode } from "react";
+import { loadFont as loadMono } from "@remotion/google-fonts/IBMPlexMono";
+import { loadFont as loadSans } from "@remotion/google-fonts/InstrumentSans";
 import { Audio } from "@remotion/media";
+import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
 import {
   AbsoluteFill,
   Composition,
   Easing,
   Img,
-  interpolate,
   Sequence,
+  interpolate,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { CaptionOverlay } from "./Captions";
 
-const FPS = 30;
-const SCENES = [
-  { id: "title", frames: 210, audio: "voiceover/scene-01.mp3" },
-  { id: "problem", frames: 330, audio: "voiceover/scene-02.mp3" },
-  { id: "product", frames: 420, audio: "voiceover/scene-03.mp3" },
-  { id: "architecture", frames: 420, audio: "voiceover/scene-04.mp3" },
-  { id: "paid", frames: 390, audio: "voiceover/scene-05.mp3" },
-  { id: "receipt", frames: 300, audio: "voiceover/scene-06.mp3" },
-  { id: "outro", frames: 210, audio: "voiceover/scene-07.mp3" },
-] as const;
-
-const TOTAL_FRAMES = SCENES.reduce((sum, scene) => sum + scene.frames, 0);
-const INK = "#10231e";
-const GREEN = "#087760";
-const MINT = "#d9eee8";
-const PAPER = "#f3f7f5";
-const MUTED = "#62736e";
-
-const enter = (frame: number) => ({
-  opacity: interpolate(frame, [0, 18], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-  }),
-  transform: `translateY(${interpolate(frame, [0, 22], [28, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-  })}px)`,
+const { fontFamily: sans } = loadSans("normal", {
+  weights: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+const { fontFamily: mono } = loadMono("normal", {
+  weights: ["400", "500", "600"],
+  subsets: ["latin"],
 });
 
-const SceneBackground = ({ children }: { children: ReactNode }) => {
+const FPS = 30;
+const TRANSITION = 8;
+const SCENES = [135, 240, 210, 240, 210, 210, 180, 150] as const;
+const SFX: Array<{ from: number; name: string; volume: number }> = [
+  { from: 127, name: "whoosh.wav", volume: 0.34 },
+  { from: 342, name: "mouse-click.wav", volume: 0.42 },
+  { from: 558, name: "switch.wav", volume: 0.38 },
+  { from: 814, name: "whoosh.wav", volume: 0.32 },
+  { from: 1015, name: "ding.wav", volume: 0.3 },
+  { from: 1234, name: "switch.wav", volume: 0.34 },
+  { from: 1390, name: "whoosh.wav", volume: 0.3 },
+];
+const TOTAL_FRAMES =
+  SCENES.reduce((sum, duration) => sum + duration, 0) -
+  TRANSITION * (SCENES.length - 1);
+
+const COLORS = {
+  ink: "#080d0b",
+  paper: "#f2f3ed",
+  mist: "#dfe8e2",
+  mint: "#65f2b8",
+  green: "#087760",
+  amber: "#f2b84b",
+  muted: "#93a39c",
+  white: "#ffffff",
+};
+
+const clamp = {
+  extrapolateLeft: "clamp" as const,
+  extrapolateRight: "clamp" as const,
+};
+
+const easeOut = Easing.bezier(0.16, 1, 0.3, 1);
+const easeInOut = Easing.bezier(0.45, 0, 0.55, 1);
+
+const progress = (frame: number, from: number, to: number) =>
+  interpolate(frame, [from, to], [0, 1], {
+    ...clamp,
+    easing: easeOut,
+  });
+
+const FadeUp = ({
+  children,
+  frame,
+  delay = 0,
+  distance = 28,
+  style,
+}: {
+  children: ReactNode;
+  frame: number;
+  delay?: number;
+  distance?: number;
+  style?: CSSProperties;
+}) => {
+  const enter = progress(frame, delay, delay + 22);
+  return (
+    <div
+      style={{
+        opacity: enter,
+        translate: `0 ${interpolate(enter, [0, 1], [distance, 0])}px`,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+const Grain = () => {
   const frame = useCurrentFrame();
   return (
     <AbsoluteFill
       style={{
-        background: `radial-gradient(circle at ${78 + frame * 0.01}% 18%, rgba(104, 211, 178, 0.22), transparent 30%), linear-gradient(135deg, ${PAPER}, #eaf2ef)`,
-        color: INK,
-        overflow: "hidden",
+        opacity: 0.12,
+        mixBlendMode: "soft-light",
+        pointerEvents: "none",
+        backgroundImage:
+          "radial-gradient(circle, rgba(255,255,255,.45) 0 0.7px, transparent .8px)",
+        backgroundSize: "5px 5px",
+        backgroundPosition: `${frame % 5}px ${(frame * 2) % 5}px`,
       }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          width: 560,
-          height: 560,
-          borderRadius: "50%",
-          right: -260,
-          bottom: -310,
-          background: "rgba(8, 119, 96, 0.09)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          width: 280,
-          height: 280,
-          borderRadius: 80,
-          rotate: "18deg",
-          left: -160,
-          top: 90,
-          background: "rgba(241, 183, 74, 0.10)",
-        }}
-      />
-      {children}
-    </AbsoluteFill>
+    />
   );
 };
 
-const Brand = () => (
-  <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-    <div
-      style={{
-        width: 54,
-        height: 54,
-        borderRadius: 16,
-        background: MINT,
-        border: "2px solid rgba(8,119,96,.22)",
-        display: "grid",
-        placeItems: "center",
-        color: GREEN,
-        fontWeight: 900,
-        fontSize: 28,
-      }}
-    >
-      IR
-    </div>
-    <div style={{ fontSize: 34, fontWeight: 850, letterSpacing: -1 }}>Invoice Rail</div>
-  </div>
-);
-
-const Header = ({ label }: { label: string }) => (
+const FrameMeta = ({ section, dark = true }: { section: string; dark?: boolean }) => (
   <div
     style={{
       position: "absolute",
       top: 54,
-      left: 92,
-      right: 92,
+      left: 78,
+      right: 78,
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      zIndex: 5,
+      zIndex: 20,
+      color: dark ? COLORS.paper : COLORS.ink,
+      fontFamily: mono,
+      fontSize: 20,
+      fontWeight: 500,
+      letterSpacing: 1.8,
+      textTransform: "uppercase",
     }}
   >
-    <Brand />
-    <div style={{ fontSize: 27, fontWeight: 750, color: GREEN, letterSpacing: 2.2 }}>{label}</div>
+    <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+      <div
+        style={{
+          width: 11,
+          height: 11,
+          borderRadius: "50%",
+          background: COLORS.mint,
+          boxShadow: `0 0 22px ${COLORS.mint}`,
+        }}
+      />
+      Invoice Rail
+    </div>
+    <div style={{ display: "flex", gap: 28, opacity: 0.72 }}>
+      <span>{section}</span>
+      <span>Arc Testnet</span>
+    </div>
   </div>
 );
 
-const ScreenshotFrame = ({
+const DarkStage = ({ children, section }: { children: ReactNode; section: string }) => (
+  <AbsoluteFill
+    style={{
+      background: COLORS.ink,
+      color: COLORS.paper,
+      fontFamily: sans,
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        backgroundImage:
+          "linear-gradient(rgba(101,242,184,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(101,242,184,.035) 1px, transparent 1px)",
+        backgroundSize: "64px 64px",
+      }}
+    />
+    <FrameMeta section={section} />
+    {children}
+    <Grain />
+  </AbsoluteFill>
+);
+
+const LightStage = ({ children, section }: { children: ReactNode; section: string }) => (
+  <AbsoluteFill
+    style={{
+      background: COLORS.paper,
+      color: COLORS.ink,
+      fontFamily: sans,
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background:
+          "radial-gradient(circle at 82% 12%, rgba(101,242,184,.18), transparent 29%), radial-gradient(circle at 8% 90%, rgba(242,184,75,.10), transparent 28%)",
+      }}
+    />
+    <FrameMeta section={section} dark={false} />
+    {children}
+    <Grain />
+  </AbsoluteFill>
+);
+
+const ProductWindow = ({
   src,
   style,
-  objectFit = "contain",
+  imageStyle,
+  children,
 }: {
   src: string;
   style?: CSSProperties;
-  objectFit?: "contain" | "cover";
+  imageStyle?: CSSProperties;
+  children?: ReactNode;
 }) => (
   <div
     style={{
+      position: "relative",
       overflow: "hidden",
-      borderRadius: 34,
-      border: "2px solid rgba(16,35,30,.11)",
       background: "white",
-      boxShadow: "0 34px 80px rgba(24, 64, 53, 0.16)",
+      border: "1px solid rgba(8,13,11,.16)",
+      boxShadow: "0 34px 90px rgba(8,25,19,.22)",
       ...style,
     }}
   >
-    <Img src={staticFile(src)} style={{ width: "100%", height: "100%", objectFit }} />
+    <Img
+      src={staticFile(src)}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        objectPosition: "center",
+        ...imageStyle,
+      }}
+    />
+    {children}
   </div>
 );
 
-const TitleScene = () => {
-  const frame = useCurrentFrame();
+const Cursor = ({ x, y, click }: { x: number; y: number; click: number }) => {
+  const ring = interpolate(click, [0, 0.35, 1], [0.2, 1, 1.8], clamp);
   return (
-    <SceneBackground>
+    <div
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: 26,
+        height: 32,
+        zIndex: 12,
+      }}
+    >
       <div
         style={{
-          padding: "140px 150px",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: 34,
-          ...enter(frame),
+          position: "absolute",
+          left: -12,
+          top: -12,
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          border: `2px solid ${COLORS.mint}`,
+          opacity: interpolate(click, [0, 0.12, 1], [0, 0.8, 0], clamp),
+          scale: ring,
+        }}
+      />
+      <svg viewBox="0 0 26 32" width="26" height="32">
+        <path
+          d="M3 2L22 19L13 20L18 29L13.5 31L8.6 22L3 28Z"
+          fill="white"
+          stroke="#080d0b"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+};
+
+const ColdOpen = () => {
+  const frame = useCurrentFrame();
+  const proof = progress(frame, 10, 42);
+  const secondLine = progress(frame, 48, 72);
+  return (
+    <DarkStage section="00 / Result first">
+      <ProductWindow
+        src="v2/arcscan-receipt.png"
+        style={{
+          position: "absolute",
+          top: 155,
+          right: -120,
+          width: 920,
+          height: 790,
+          opacity: interpolate(frame, [0, 30], [0, 0.62], clamp),
+          rotate: "-2deg",
+          scale: interpolate(frame, [0, SCENES[0]], [1.04, 1.13], {
+            ...clamp,
+            easing: easeInOut,
+          }),
+          filter: "saturate(.72) contrast(1.08)",
+        }}
+        imageStyle={{ objectPosition: "42% 35%" }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 110,
+          top: 235,
+          width: 1080,
+          zIndex: 8,
         }}
       >
-        <div style={{ color: GREEN, fontWeight: 850, fontSize: 34, letterSpacing: 5 }}>ARC TESTNET · LIVE ALPHA</div>
-        <div style={{ fontSize: 150, fontWeight: 900, lineHeight: 0.9, letterSpacing: -9 }}>Invoice Rail</div>
-        <div style={{ fontSize: 66, fontWeight: 650, lineHeight: 1.08, maxWidth: 1360 }}>
-          Stablecoin invoicing with verifiable onchain reconciliation.
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 24,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            color: COLORS.mint,
+            opacity: proof,
+          }}
+        >
+          Live transaction · block 51956775
         </div>
-        <div style={{ display: "flex", gap: 20, marginTop: 24 }}>
-          {['Non-custodial', 'USDC + EURC', 'Arc Memo'].map((item) => (
-            <div key={item} style={{ padding: "17px 27px", borderRadius: 999, background: "white", fontSize: 30, fontWeight: 720, boxShadow: "0 12px 34px rgba(16,35,30,.08)" }}>{item}</div>
-          ))}
+        <div
+          style={{
+            marginTop: 34,
+            fontSize: 116,
+            fontWeight: 600,
+            lineHeight: 0.96,
+            letterSpacing: -6.5,
+            opacity: proof,
+            translate: `${interpolate(proof, [0, 1], [-35, 0])}px 0`,
+          }}
+        >
+          Settlement:
+          <br />
+          <span style={{ color: COLORS.mint }}>≤ 0.51 seconds.</span>
+        </div>
+        <div
+          style={{
+            marginTop: 48,
+            fontSize: 48,
+            lineHeight: 1.14,
+            maxWidth: 850,
+            color: COLORS.mist,
+            opacity: secondLine,
+            translate: `0 ${interpolate(secondLine, [0, 1], [24, 0])}px`,
+          }}
+        >
+          Reconciliation should not take the rest of the day.
         </div>
       </div>
-    </SceneBackground>
+      <div
+        style={{
+          position: "absolute",
+          left: 110,
+          right: 110,
+          bottom: 70,
+          height: 1,
+          background: "rgba(242,243,237,.18)",
+        }}
+      />
+    </DarkStage>
   );
 };
 
-const ProblemScene = () => {
+const IssueScene = () => {
   const frame = useCurrentFrame();
+  const cursorMove = progress(frame, 70, 168);
+  const click = progress(frame, 165, 182);
+  const scan = progress(frame, 26, 120);
   return (
-    <SceneBackground>
-      <Header label="THE RECONCILIATION GAP" />
-      <div style={{ padding: "185px 120px 180px", display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 110, height: "100%", alignItems: "center", ...enter(frame) }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 34 }}>
-          <div style={{ fontSize: 100, fontWeight: 900, lineHeight: 0.98, letterSpacing: -5 }}>A transfer is not an invoice.</div>
-          <div style={{ fontSize: 43, lineHeight: 1.3, color: MUTED, maxWidth: 780 }}>
-            Addresses and amounts do not reliably explain which customer obligation was settled.
+    <LightStage section="01 / Issue">
+      <FadeUp
+        frame={frame}
+        style={{ position: "absolute", left: 100, top: 130, zIndex: 8 }}
+      >
+        <div style={{ fontSize: 64, fontWeight: 600, letterSpacing: -3.2 }}>
+          One request. One link.
+        </div>
+        <div style={{ fontSize: 28, marginTop: 10, color: "#58655f" }}>
+          Create once, then share the same verifiable payment context.
+        </div>
+      </FadeUp>
+      <ProductWindow
+        src="v2/dashboard-paid-wallet.png"
+        style={{
+          position: "absolute",
+          left: 96,
+          top: 265,
+          width: 1728,
+          height: 720,
+          borderRadius: 18,
+          scale: interpolate(frame, [0, SCENES[1]], [1.015, 1.055], {
+            ...clamp,
+            easing: easeInOut,
+          }),
+        }}
+        imageStyle={{ objectPosition: "50% 49%" }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: 216,
+            top: 276,
+            width: 300,
+            height: 410,
+            border: `3px solid rgba(101,242,184,${interpolate(scan, [0, 1], [0, 0.95])})`,
+            boxShadow: `0 0 0 999px rgba(8,13,11,${interpolate(scan, [0, 1], [0, 0.16])})`,
+            borderRadius: 12,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: 544,
+            top: 346,
+            width: 394,
+            height: 132,
+            border: `2px solid rgba(101,242,184,${interpolate(frame, [95, 135], [0, 0.95], clamp)})`,
+            borderRadius: 10,
+          }}
+        />
+        <Cursor
+          x={interpolate(cursorMove, [0, 1], [485, 899])}
+          y={interpolate(cursorMove, [0, 1], [590, 407])}
+          click={click}
+        />
+      </ProductWindow>
+      <div
+        style={{
+          position: "absolute",
+          right: 86,
+          bottom: 40,
+          fontFamily: mono,
+          fontSize: 18,
+          letterSpacing: 1.2,
+          color: COLORS.green,
+        }}
+      >
+        IR-260715-8747A0EB3759
+      </div>
+    </LightStage>
+  );
+};
+
+const PayScene = () => {
+  const frame = useCurrentFrame();
+  const bridge = progress(frame, 52, 138);
+  const click = progress(frame, 120, 140);
+  return (
+    <DarkStage section="02 / Pay">
+      <div
+        style={{
+          position: "absolute",
+          left: 92,
+          top: 145,
+          width: 780,
+          zIndex: 6,
+        }}
+      >
+        <FadeUp frame={frame}>
+          <div style={{ fontSize: 72, fontWeight: 600, letterSpacing: -3.8 }}>
+            The payer signs.
           </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {[
-            ['Same amount', 'Repeated payments collide'],
-            ['Different payer', 'Third parties can settle'],
-            ['Manual evidence', 'Screenshots and hashes do not scale'],
-          ].map(([title, detail], index) => (
-            <div key={title} style={{ padding: "34px 40px", borderRadius: 28, background: index === 1 ? MINT : "white", border: "2px solid rgba(16,35,30,.08)", boxShadow: "0 18px 42px rgba(16,35,30,.08)" }}>
-              <div style={{ fontSize: 39, fontWeight: 850 }}>{title}</div>
-              <div style={{ fontSize: 31, color: MUTED, marginTop: 8 }}>{detail}</div>
-            </div>
-          ))}
-        </div>
+          <div style={{ fontSize: 34, color: COLORS.muted, marginTop: 10 }}>
+            Invoice Rail never receives private keys.
+          </div>
+        </FadeUp>
       </div>
-    </SceneBackground>
+      <ProductWindow
+        src="v2/invoice-open.png"
+        style={{
+          position: "absolute",
+          left: 100,
+          top: 300,
+          width: 760,
+          height: 690,
+          borderRadius: 18,
+          opacity: progress(frame, 10, 35),
+          translate: `${interpolate(progress(frame, 10, 35), [0, 1], [-45, 0])}px 0`,
+        }}
+        imageStyle={{ objectFit: "contain", background: "#f3f7f5" }}
+      />
+      <ProductWindow
+        src="v2/dashboard-paid-wallet.png"
+        style={{
+          position: "absolute",
+          right: 92,
+          top: 188,
+          width: 820,
+          height: 802,
+          borderRadius: 18,
+          opacity: progress(frame, 32, 66),
+          translate: `${interpolate(progress(frame, 32, 66), [0, 1], [55, 0])}px 0`,
+        }}
+        imageStyle={{
+          width: 1700,
+          maxWidth: "none",
+          objectFit: "cover",
+          objectPosition: "right center",
+          translate: "-880px 0",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            right: 50,
+            top: 120,
+            width: 290,
+            height: 118,
+            border: `2px solid rgba(101,242,184,${bridge})`,
+            borderRadius: 14,
+            boxShadow: `0 0 45px rgba(101,242,184,${bridge * 0.22})`,
+          }}
+        />
+        <Cursor x={610} y={176} click={click} />
+      </ProductWindow>
+      <div
+        style={{
+          position: "absolute",
+          left: 860,
+          top: 660,
+          width: 190,
+          height: 2,
+          background: `linear-gradient(90deg, ${COLORS.mint} ${bridge * 100}%, rgba(101,242,184,.16) ${bridge * 100}%)`,
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: `${bridge * 100}%`,
+            top: -6,
+            width: 14,
+            height: 14,
+            borderRadius: "50%",
+            background: COLORS.mint,
+            boxShadow: `0 0 24px ${COLORS.mint}`,
+          }}
+        />
+      </div>
+    </DarkStage>
   );
 };
 
-const ProductScene = () => {
+const MemoScene = () => {
   const frame = useCurrentFrame();
-  return (
-    <SceneBackground>
-      <Header label="ISSUE ONCE" />
-      <div style={{ padding: "160px 92px 175px", height: "100%", display: "grid", gridTemplateColumns: "1fr 440px", gap: 54, alignItems: "center", ...enter(frame) }}>
-        <ScreenshotFrame src="production-home.png" style={{ height: 720 }} objectFit="cover" />
-        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-          <div style={{ fontSize: 74, fontWeight: 900, lineHeight: 1, letterSpacing: -3 }}>One request. One payment link.</div>
-          {['Wallet-signed merchant session', 'USDC or EURC settlement', 'Team roles, CSV, webhooks'].map((item) => (
-            <div key={item} style={{ display: "flex", gap: 18, alignItems: "flex-start", fontSize: 31, fontWeight: 650, lineHeight: 1.25 }}>
-              <span style={{ width: 30, height: 30, marginTop: 3, borderRadius: "50%", background: GREEN, color: "white", display: "grid", placeItems: "center", fontSize: 19 }}>✓</span>
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </SceneBackground>
-  );
-};
-
-const ArchitectureScene = () => {
-  const frame = useCurrentFrame();
-  const nodes = [
-    ['Merchant', 'Create invoice'],
-    ['Payment link', 'Share safely'],
-    ['Arc Memo', 'Atomic context'],
-    ['Worker', 'Exact verification'],
-    ['PostgreSQL', 'Finance record'],
+  const typed = Math.floor(interpolate(frame, [20, 120], [0, 98], clamp));
+  const bound = progress(frame, 84, 126);
+  const code =
+    "memo(USDC, transfer(0xe118…5b06, 0.01), IR-260715-8747A0EB3759)";
+  const fields = [
+    ["TOKEN", "USDC · 0x3600…0000"],
+    ["RECIPIENT", "0xe118…5b06"],
+    ["AMOUNT", "0.01"],
+    ["MEMO ID", "IR-260715-8747A0EB3759"],
   ];
   return (
-    <SceneBackground>
-      <Header label="RECONCILE ONCHAIN" />
-      <div style={{ padding: "175px 90px 180px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", gap: 72, ...enter(frame) }}>
-        <div style={{ textAlign: "center", fontSize: 82, fontWeight: 900, letterSpacing: -4 }}>Arc makes the invoice reference atomic.</div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18 }}>
-          {nodes.map(([title, detail], index) => (
-            <div key={title} style={{ display: "flex", alignItems: "center", gap: 18 }}>
-              <div style={{ width: 280, minHeight: 180, borderRadius: 28, padding: "34px 28px", background: index === 2 ? GREEN : "white", color: index === 2 ? "white" : INK, display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", boxShadow: "0 20px 50px rgba(16,35,30,.10)" }}>
-                <div style={{ fontSize: 36, fontWeight: 900 }}>{title}</div>
-                <div style={{ fontSize: 27, opacity: 0.72, marginTop: 10 }}>{detail}</div>
-              </div>
-              {index < nodes.length - 1 ? <div style={{ fontSize: 46, color: GREEN, fontWeight: 900 }}>→</div> : null}
+    <DarkStage section="03 / Bind">
+      <div style={{ position: "absolute", left: 105, top: 145, right: 105 }}>
+        <FadeUp frame={frame}>
+          <div
+            style={{
+              fontFamily: mono,
+              fontSize: 22,
+              letterSpacing: 2,
+              color: COLORS.mint,
+            }}
+          >
+            THE DIFFERENCE IS NOT ANOTHER DATABASE FIELD
+          </div>
+          <div
+            style={{
+              fontSize: 78,
+              fontWeight: 600,
+              letterSpacing: -4.2,
+              marginTop: 22,
+              maxWidth: 1280,
+              lineHeight: 1,
+            }}
+          >
+            The invoice reference travels with the money.
+          </div>
+        </FadeUp>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          left: 105,
+          top: 430,
+          width: 1710,
+          height: 420,
+          borderTop: "1px solid rgba(242,243,237,.16)",
+          borderBottom: "1px solid rgba(242,243,237,.16)",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "340px 1fr",
+            height: "100%",
+          }}
+        >
+          <div
+            style={{
+              padding: "42px 48px 40px 0",
+              borderRight: "1px solid rgba(242,243,237,.16)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 26,
+            }}
+          >
+            {fields.map(([label, value], index) => {
+              const item = progress(frame, 28 + index * 15, 48 + index * 15);
+              return (
+                <div key={label} style={{ opacity: item, translate: `${(1 - item) * -18}px 0` }}>
+                  <div
+                    style={{
+                      fontFamily: mono,
+                      fontSize: 16,
+                      letterSpacing: 1.6,
+                      color: COLORS.muted,
+                    }}
+                  >
+                    {label}
+                  </div>
+                  <div style={{ fontFamily: mono, fontSize: 22, marginTop: 5 }}>
+                    {value}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div
+            style={{
+              padding: "46px 0 40px 58px",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ fontFamily: mono, fontSize: 29, color: COLORS.mist }}>
+              {code.slice(0, typed)}
+              <span style={{ color: COLORS.mint }}>|</span>
             </div>
-          ))}
-        </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 26 }}>
-          {['memoId', 'token target', 'recipient + amount', 'txHash + logIndex'].map((item) => (
-            <div key={item} style={{ fontSize: 28, fontWeight: 740, padding: "15px 23px", borderRadius: 12, background: MINT, color: GREEN }}>{item}</div>
-          ))}
+            <div
+              style={{
+                position: "absolute",
+                left: 58,
+                right: 0,
+                top: 150,
+                height: 2,
+                background: "rgba(101,242,184,.15)",
+              }}
+            >
+              <div
+                style={{
+                  width: `${bound * 100}%`,
+                  height: "100%",
+                  background: COLORS.mint,
+                  boxShadow: `0 0 26px ${COLORS.mint}`,
+                }}
+              />
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 58,
+                top: 194,
+                fontSize: 50,
+                fontWeight: 600,
+                letterSpacing: -2,
+                opacity: bound,
+                color: COLORS.mint,
+              }}
+            >
+              One atomic Arc transaction.
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 58,
+                top: 265,
+                fontSize: 28,
+                color: COLORS.muted,
+                opacity: bound,
+              }}
+            >
+              Token transfer and business context succeed—or fail—together.
+            </div>
+          </div>
         </div>
       </div>
-    </SceneBackground>
+    </DarkStage>
   );
 };
 
 const PaidScene = () => {
   const frame = useCurrentFrame();
+  const match = progress(frame, 45, 90);
+  const paid = progress(frame, 70, 114);
   return (
-    <SceneBackground>
-      <Header label="VERIFIED PAYMENT" />
-      <div style={{ padding: "150px 94px 165px", height: "100%", display: "grid", gridTemplateColumns: "1fr 520px", gap: 64, alignItems: "center", ...enter(frame) }}>
-        <ScreenshotFrame src="production-paid.png" style={{ height: 760 }} objectFit="contain" />
-        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-          <div style={{ color: GREEN, fontSize: 34, fontWeight: 900, letterSpacing: 3 }}>PAID</div>
-          <div style={{ fontSize: 98, fontWeight: 900, letterSpacing: -5 }}>0.01 <span style={{ fontSize: 46 }}>USDC</span></div>
-          <div style={{ fontSize: 36, color: MUTED, lineHeight: 1.35 }}>The worker observed one Memo log and persisted one exact matching payment.</div>
-          <div style={{ padding: "25px 28px", borderRadius: 22, background: "white", fontSize: 27, lineHeight: 1.5, boxShadow: "0 16px 40px rgba(16,35,30,.08)" }}>
-            <b>Invoice</b><br />IR-260715-8747A0EB3759
+    <LightStage section="04 / Verify">
+      <div
+        style={{
+          position: "absolute",
+          left: 105,
+          top: 148,
+          width: 630,
+          zIndex: 8,
+        }}
+      >
+        <FadeUp frame={frame}>
+          <div style={{ fontSize: 72, fontWeight: 600, letterSpacing: -4 }}>
+            Open becomes paid.
           </div>
-        </div>
+          <div style={{ fontSize: 32, color: "#596760", marginTop: 12 }}>
+            Only after an exact onchain match.
+          </div>
+        </FadeUp>
       </div>
-    </SceneBackground>
+      <ProductWindow
+        src="v2/invoice-open.png"
+        style={{
+          position: "absolute",
+          left: 100,
+          top: 325,
+          width: 820,
+          height: 650,
+          borderRadius: 18,
+          opacity: interpolate(match, [0, 1], [1, 0.32]),
+          translate: `${interpolate(match, [0, 1], [0, -110])}px 0`,
+          scale: interpolate(match, [0, 1], [1, 0.94]),
+        }}
+        imageStyle={{ objectPosition: "50% 12%" }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 848,
+          top: 580,
+          width: 238,
+          height: 2,
+          background: "rgba(8,119,96,.18)",
+        }}
+      >
+        <div
+          style={{
+            width: `${match * 100}%`,
+            height: "100%",
+            background: COLORS.green,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: `${match * 100}%`,
+            top: -7,
+            width: 16,
+            height: 16,
+            borderRadius: "50%",
+            background: COLORS.green,
+            boxShadow: "0 0 24px rgba(8,119,96,.5)",
+          }}
+        />
+      </div>
+      <ProductWindow
+        src="v2/invoice-paid.png"
+        style={{
+          position: "absolute",
+          right: 118,
+          top: 172,
+          width: 690,
+          height: 790,
+          borderRadius: 18,
+          opacity: paid,
+          translate: `${interpolate(paid, [0, 1], [85, 0])}px 0`,
+          scale: interpolate(paid, [0, 1], [0.92, 1]),
+        }}
+        imageStyle={{ objectFit: "contain", background: "#f3f7f5" }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 104,
+          bottom: 50,
+          fontFamily: mono,
+          fontSize: 20,
+          color: COLORS.green,
+          letterSpacing: 1.4,
+          opacity: paid,
+        }}
+      >
+        OBSERVED · VERIFIED · PERSISTED
+      </div>
+    </LightStage>
   );
 };
 
-const ReceiptScene = () => {
+const ProofScene = () => {
   const frame = useCurrentFrame();
+  const zoom = progress(frame, 18, 182);
+  const metric = progress(frame, 62, 102);
   return (
-    <SceneBackground>
-      <Header label="PUBLIC PROOF" />
-      <div style={{ padding: "155px 92px 165px", height: "100%", display: "grid", gridTemplateColumns: "1fr 500px", gap: 58, alignItems: "center", ...enter(frame) }}>
-        <ScreenshotFrame src="arcscan-receipt.png" style={{ height: 730 }} objectFit="cover" />
-        <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
-          <div style={{ fontSize: 34, color: GREEN, fontWeight: 900, letterSpacing: 3 }}>ARCSCAN · SUCCESS</div>
-          <div style={{ fontSize: 78, fontWeight: 900, lineHeight: 1.02, letterSpacing: -3 }}>Confirmed in ≤ 0.51 seconds.</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-            {[['Block', '51956775'], ['Fee', '0.002553726 USDC']].map(([label, value]) => (
-              <div key={label} style={{ background: "white", borderRadius: 20, padding: "24px 22px", boxShadow: "0 14px 34px rgba(16,35,30,.08)" }}>
-                <div style={{ fontSize: 24, color: MUTED }}>{label}</div>
-                <div style={{ fontSize: 30, fontWeight: 850, marginTop: 8 }}>{value}</div>
+    <DarkStage section="05 / Proof">
+      <ProductWindow
+        src="v2/arcscan-receipt.png"
+        style={{
+          position: "absolute",
+          left: 70,
+          top: 160,
+          width: 1080,
+          height: 800,
+          borderRadius: 16,
+          scale: interpolate(zoom, [0, 1], [1.01, 1.055]),
+          translate: `${interpolate(zoom, [0, 1], [0, -16])}px ${interpolate(zoom, [0, 1], [0, -10])}px`,
+          filter: "saturate(.8) contrast(1.06)",
+        }}
+        imageStyle={{ objectPosition: "38% 33%" }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 1235,
+          right: 80,
+          top: 235,
+          zIndex: 8,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 22,
+            color: COLORS.mint,
+            letterSpacing: 1.8,
+            opacity: metric,
+          }}
+        >
+          ARCSCAN · SUCCESS
+        </div>
+        <div
+          style={{
+            fontSize: 148,
+            fontWeight: 600,
+            lineHeight: 0.86,
+            letterSpacing: -8,
+            marginTop: 34,
+            color: COLORS.paper,
+            opacity: metric,
+            translate: `${interpolate(metric, [0, 1], [45, 0])}px 0`,
+          }}
+        >
+          0.51
+          <span style={{ display: "block", fontSize: 60, letterSpacing: -2, marginTop: 28 }}>
+            seconds
+          </span>
+        </div>
+        <div
+          style={{
+            marginTop: 54,
+            paddingTop: 28,
+            borderTop: "1px solid rgba(242,243,237,.18)",
+            display: "grid",
+            gap: 16,
+            fontFamily: mono,
+            fontSize: 20,
+            color: COLORS.muted,
+            opacity: progress(frame, 92, 126),
+          }}
+        >
+          <div>BLOCK 51956775</div>
+          <div>FEE 0.002553726 USDC</div>
+          <div>TX 0x8c93…18c1</div>
+        </div>
+      </div>
+    </DarkStage>
+  );
+};
+
+const OpsScene = () => {
+  const frame = useCurrentFrame();
+  const lines = [
+    ["08:32:18.104", "memo log detected", "51956775"],
+    ["08:32:18.127", "token · recipient · amount", "match"],
+    ["08:32:18.149", "payment persisted", "idempotent"],
+    ["08:32:18.183", "invoice.paid", "delivered"],
+  ];
+  return (
+    <DarkStage section="06 / Operate">
+      <div style={{ position: "absolute", left: 110, top: 150, width: 940 }}>
+        <FadeUp frame={frame}>
+          <div style={{ fontSize: 76, fontWeight: 600, letterSpacing: -4 }}>
+            A payment your software can act on.
+          </div>
+        </FadeUp>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          left: 110,
+          right: 110,
+          top: 395,
+          height: 430,
+          borderTop: "1px solid rgba(242,243,237,.16)",
+          borderBottom: "1px solid rgba(242,243,237,.16)",
+          display: "grid",
+          gridTemplateColumns: "1.25fr .75fr",
+        }}
+      >
+        <div style={{ padding: "42px 60px 42px 0", borderRight: "1px solid rgba(242,243,237,.16)" }}>
+          {lines.map(([time, label, result], index) => {
+            const line = progress(frame, 25 + index * 18, 45 + index * 18);
+            return (
+              <div
+                key={label}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "190px 1fr 160px",
+                  alignItems: "center",
+                  height: 82,
+                  borderBottom: "1px solid rgba(242,243,237,.08)",
+                  fontFamily: mono,
+                  fontSize: 21,
+                  opacity: line,
+                  translate: `${interpolate(line, [0, 1], [-26, 0])}px 0`,
+                }}
+              >
+                <span style={{ color: COLORS.muted }}>{time}</span>
+                <span>{label}</span>
+                <span style={{ color: COLORS.mint, textAlign: "right" }}>{result}</span>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+        <div
+          style={{
+            padding: "50px 0 40px 66px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 34,
+          }}
+        >
+          {[
+            ["LOGS", "1"],
+            ["PAYMENTS", "1"],
+            ["FALSE MATCHES", "0"],
+          ].map(([label, value], index) => {
+            const stat = progress(frame, 48 + index * 16, 68 + index * 16);
+            return (
+              <div key={label} style={{ display: "flex", alignItems: "baseline", gap: 24, opacity: stat }}>
+                <div style={{ fontSize: 64, fontWeight: 600, color: COLORS.mint }}>{value}</div>
+                <div style={{ fontFamily: mono, fontSize: 19, letterSpacing: 1.4, color: COLORS.muted }}>
+                  {label}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-    </SceneBackground>
-  );
-};
-
-const OutroScene = () => {
-  const frame = useCurrentFrame();
-  return (
-    <SceneBackground>
-      <div style={{ padding: "130px 160px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", gap: 34, ...enter(frame) }}>
-        <Brand />
-        <div style={{ fontSize: 104, fontWeight: 900, lineHeight: 0.98, letterSpacing: -5, maxWidth: 1500 }}>Issue once. Reconcile onchain.</div>
-        <div style={{ fontSize: 42, color: MUTED }}>Non-custodial invoicing · exact Memo verification · operational webhooks</div>
-        <div style={{ marginTop: 18, padding: "23px 38px", borderRadius: 999, background: GREEN, color: "white", fontSize: 34, fontWeight: 820 }}>invoice-rail-web.onrender.com</div>
-        <div style={{ fontSize: 27, color: MUTED }}>github.com/xie8266509/invoice-rail</div>
+      <div
+        style={{
+          position: "absolute",
+          left: 110,
+          bottom: 70,
+          fontSize: 28,
+          color: COLORS.muted,
+          opacity: progress(frame, 104, 132),
+        }}
+      >
+        Signed webhooks · CSV export · PostgreSQL record
       </div>
-    </SceneBackground>
+    </DarkStage>
   );
 };
 
-const components = [TitleScene, ProblemScene, ProductScene, ArchitectureScene, PaidScene, ReceiptScene, OutroScene];
+const EndScene = () => {
+  const frame = useCurrentFrame();
+  const reveal = progress(frame, 8, 38);
+  const url = progress(frame, 54, 82);
+  return (
+    <DarkStage section="07 / Live alpha">
+      <ProductWindow
+        src="v2/dashboard-paid-wallet.png"
+        style={{
+          position: "absolute",
+          left: 610,
+          top: 120,
+          width: 1410,
+          height: 900,
+          opacity: 0.42,
+          scale: interpolate(frame, [0, SCENES[7]], [1.05, 1.11], {
+            ...clamp,
+            easing: easeInOut,
+          }),
+          filter: "saturate(.55) contrast(1.1)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(90deg, #080d0b 0%, #080d0b 42%, rgba(8,13,11,.78) 62%, rgba(8,13,11,.15) 100%)",
+        }}
+      />
+      <div style={{ position: "absolute", left: 110, top: 245, width: 1160, zIndex: 8 }}>
+        <div
+          style={{
+            fontSize: 112,
+            lineHeight: 0.94,
+            fontWeight: 600,
+            letterSpacing: -6.5,
+            opacity: reveal,
+            translate: `${interpolate(reveal, [0, 1], [-36, 0])}px 0`,
+          }}
+        >
+          Issue once.
+          <br />
+          Reconcile <span style={{ color: COLORS.mint }}>onchain.</span>
+        </div>
+        <div
+          style={{
+            marginTop: 58,
+            display: "flex",
+            alignItems: "center",
+            gap: 20,
+            opacity: url,
+          }}
+        >
+          <div
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              background: COLORS.mint,
+              boxShadow: `0 0 22px ${COLORS.mint}`,
+            }}
+          />
+          <div style={{ fontFamily: mono, fontSize: 25, letterSpacing: 0.6 }}>
+            invoice-rail-web.onrender.com
+          </div>
+        </div>
+        <div
+          style={{
+            marginTop: 22,
+            fontFamily: mono,
+            fontSize: 20,
+            color: COLORS.muted,
+            opacity: url,
+          }}
+        >
+          LIVE ON ARC TESTNET · OPEN SOURCE
+        </div>
+      </div>
+    </DarkStage>
+  );
+};
 
-export const InvoiceRailVideo = () => {
+const FilmAudio = () => (
+  <>
+    <Audio
+      src={staticFile("v2/audio/digital-clouds.mp3")}
+      trimBefore={8 * FPS}
+      volume={(frame) =>
+        interpolate(
+          frame,
+          [0, 42, 360, 560, 800, 995, 1200, 1370, TOTAL_FRAMES - 80, TOTAL_FRAMES],
+          [0, 0.46, 0.46, 0.38, 0.45, 0.5, 0.52, 0.56, 0.56, 0],
+          clamp,
+        )
+      }
+    />
+    {SFX.map(({ from, name, volume }) => (
+      <Sequence key={`${name}-${from}`} from={from} layout="none">
+        <Audio src={staticFile(`v2/audio/${name}`)} volume={volume} />
+      </Sequence>
+    ))}
+  </>
+);
+
+const GlobalProgress = () => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   return (
-    <AbsoluteFill>
-      {SCENES.map((scene, index) => {
-        const from = SCENES.slice(0, index).reduce(
-          (sum, precedingScene) => sum + precedingScene.frames,
-          0,
-        );
-        const Scene = components[index];
-        return (
-          <Sequence key={scene.id} from={from} durationInFrames={scene.frames}>
-            <Scene />
-            <Audio src={staticFile(scene.audio)} volume={0.96} />
-          </Sequence>
-        );
-      })}
-      <CaptionOverlay />
-      <div style={{ position: "absolute", top: 0, left: 0, height: 8, width: `${(frame / durationInFrames) * 100}%`, background: GREEN }} />
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: `${(frame / durationInFrames) * 100}%`,
+        height: 5,
+        background: COLORS.mint,
+        zIndex: 50,
+        boxShadow: "0 0 16px rgba(101,242,184,.46)",
+      }}
+    />
+  );
+};
+
+export const InvoiceRailFilm = () => {
+  const timing = linearTiming({ durationInFrames: TRANSITION });
+  return (
+    <AbsoluteFill style={{ background: COLORS.ink }}>
+      <TransitionSeries>
+        <TransitionSeries.Sequence durationInFrames={SCENES[0]}>
+          <ColdOpen />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={timing} />
+        <TransitionSeries.Sequence durationInFrames={SCENES[1]}>
+          <IssueScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={timing} />
+        <TransitionSeries.Sequence durationInFrames={SCENES[2]}>
+          <PayScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={timing} />
+        <TransitionSeries.Sequence durationInFrames={SCENES[3]}>
+          <MemoScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={timing} />
+        <TransitionSeries.Sequence durationInFrames={SCENES[4]}>
+          <PaidScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={timing} />
+        <TransitionSeries.Sequence durationInFrames={SCENES[5]}>
+          <ProofScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={timing} />
+        <TransitionSeries.Sequence durationInFrames={SCENES[6]}>
+          <OpsScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={timing} />
+        <TransitionSeries.Sequence durationInFrames={SCENES[7]}>
+          <EndScene />
+        </TransitionSeries.Sequence>
+      </TransitionSeries>
+      <FilmAudio />
+      <GlobalProgress />
     </AbsoluteFill>
   );
 };
@@ -348,7 +1134,7 @@ export const InvoiceRailVideo = () => {
 export const MyComposition = () => (
   <Composition
     id="InvoiceRailDemo"
-    component={InvoiceRailVideo}
+    component={InvoiceRailFilm}
     durationInFrames={TOTAL_FRAMES}
     fps={FPS}
     width={1920}

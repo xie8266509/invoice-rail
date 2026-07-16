@@ -1,9 +1,0 @@
-[
-  {"text":"Stablecoin settlement is fast. Reconciliation is manual. Invoice Rail makes Arc payments finance-ready.","startMs":0,"endMs":7000,"timestampMs":null,"confidence":null},
-  {"text":"Wallet transfers show an address and amount, but not which invoice they settle—especially when amounts repeat or another wallet pays.","startMs":7000,"endMs":18000,"timestampMs":null,"confidence":null},
-  {"text":"A merchant creates a USDC or EURC invoice, stores it in a team workspace, and shares a short payment link. Invoice Rail never receives private keys.","startMs":18000,"endMs":32000,"timestampMs":null,"confidence":null},
-  {"text":"The payer signs one Arc Memo transaction. The invoice ID and exact transfer calldata are bound to the token transfer atomically.","startMs":32000,"endMs":46000,"timestampMs":null,"confidence":null},
-  {"text":"A separate worker verifies the Memo contract, token, recipient, amount, transaction hash, and log index before marking the invoice paid.","startMs":46000,"endMs":59000,"timestampMs":null,"confidence":null},
-  {"text":"This live test payment succeeded on Arc. ArcScan reported confirmation within point five one seconds.","startMs":59000,"endMs":69000,"timestampMs":null,"confidence":null},
-  {"text":"Invoice Rail is live on Arc: non-custodial invoicing with exact onchain reconciliation.","startMs":69000,"endMs":76000,"timestampMs":null,"confidence":null}
-]

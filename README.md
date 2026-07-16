@@ -6,7 +6,7 @@
 
 Invoice Rail lets a merchant issue a USDC or EURC payment request, share a short payment link, and reconcile settlement from an Arc `Memo` event. The payer signs with their own wallet; Invoice Rail never receives private keys and does not custody funds.
 
-![A verified Invoice Rail payment](demo-video/public/production-paid.png)
+![A verified Invoice Rail payment](demo-video/public/v2/invoice-paid.png)
 
 ## Production proof
 

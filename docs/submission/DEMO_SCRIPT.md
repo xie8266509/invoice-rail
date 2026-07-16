@@ -1,42 +1,51 @@
-# Invoice Rail demo script
+# Invoice Rail demo film
 
 ## Deliverable
 
-- Length: approximately 75 seconds
-- Format: 1920×1080, 30 fps, H.264 MP4
-- Language: English narration with English on-screen copy
-- Evidence: production UI and the verified ArcScan receipt
+- Length: 50.64 seconds
+- Format: 1920×1080, 30 fps, H.264 video with stereo AAC audio
+- Language: concise English on-screen copy; no synthetic narration
+- Evidence: real Invoice Rail states, the connected Arc wallet, and the verified ArcScan receipt
 
-## Timeline
+## Editorial structure
 
-| Time | Visual | Narration |
+| Time | Chapter | Reviewer takeaway |
 | --- | --- | --- |
-| 0–7s | Invoice Rail title and product promise | “Stablecoin settlement is fast. Reconciliation is manual. Invoice Rail makes Arc payments finance-ready.” |
-| 7–18s | Problem statement and mismatched-transfer visual | “Wallet transfers normally show an address and amount, but not which invoice they settle—especially when amounts repeat or another wallet pays.” |
-| 18–33s | Production invoice screen | “A merchant creates a USDC or EURC invoice, stores it in a team workspace, and shares a short payment link. Invoice Rail never receives private keys.” |
-| 33–47s | Architecture flow | “The payer signs one Arc Memo transaction. The invoice ID and exact transfer calldata are bound to the token transfer atomically.” |
-| 47–60s | Production Paid screen | “A separate worker verifies the Memo contract, token, recipient, amount, transaction hash, and log index before marking the invoice paid.” |
-| 60–69s | ArcScan receipt | “This live test payment succeeded on Arc. ArcScan reported confirmation within point five one seconds.” |
-| 69–76s | Closing card and links | “Invoice Rail is live on Arc: non-custodial invoicing with exact onchain reconciliation.” |
+| 0–4s | Result first | A real Arc transaction settled in `<= 0.51s`; proof appears before the pitch. |
+| 4–12s | Issue | A merchant creates a shareable USDC invoice with a deterministic reference. |
+| 12–19s | Pay | The payer signs in their own wallet; Invoice Rail never receives private keys. |
+| 19–27s | Bind | The Memo call binds token, recipient, amount, and invoice ID in one atomic transaction. |
+| 27–34s | Verify | The invoice moves from open to paid only after the exact onchain match. |
+| 34–41s | Proof | The ArcScan receipt exposes status, Memo method, block, fee, hash, and finality. |
+| 41–46s | Operate | The worker detects the log, matches fields, persists idempotently, and emits `invoice.paid`. |
+| 46–51s | Live alpha | Product promise, public URL, Arc Testnet status, and open-source close. |
+
+## Creative rules
+
+- Every product claim is paired with a real product or chain artifact.
+- The film opens with proof instead of a logo animation.
+- Motion is functional: it follows signing, binding, verification, and persistence.
+- Music provides momentum; UI sounds mark state changes without turning the demo into a trailer.
+- The UI remains readable at normal playback speed and in a silent reviewer environment.
 
 ## Live demo sequence
 
 1. Open https://invoice-rail-web.onrender.com.
 2. Connect the funded test wallet and sign in.
 3. Create a `0.01 USDC` invoice with a short memo.
-4. Copy the short payment link and open it in a separate browser profile.
+4. Copy the payment link and open it in a separate browser profile.
 5. Connect the payer wallet, verify Arc Testnet, and sign the transaction.
-6. Show the Paid state and click View receipt.
+6. Show the Paid state and click **View receipt**.
 7. Return to the merchant workspace and refresh the invoice list.
-8. Show the worker log or webhook delivery only if time permits.
+8. Show the worker delivery only if the reviewer wants the implementation detail.
 
 ## Fallback if the live network is rate-limited
 
-- Use the rendered video, which contains the real production screens and receipt.
+- Play the rendered film, which contains the real payment run and receipt.
 - The app read client automatically fails over across dRPC, Blockdaemon, and Circle.
 - If a wallet's saved Arc network is rate-limited, update its RPC to `https://rpc.drpc.testnet.arc.network`.
 
-## Verified transaction used in the video
+## Verified transaction used in the film
 
 - Invoice: `IR-260715-8747A0EB3759`
 - Amount: `0.01 USDC`
