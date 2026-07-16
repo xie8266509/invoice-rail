@@ -81,6 +81,9 @@ export function useWallet() {
     async (requestAccess = false, provider = selectedWallet?.provider) => {
       try {
         const snapshot = await getWalletSnapshot(provider, requestAccess);
+        if (requestAccess && !snapshot.account) {
+          throw new Error("The selected wallet did not return an account. Open the wallet, approve this site, and try again.");
+        }
         setState((current) => ({ ...current, ...snapshot, connecting: false, error: undefined }));
         await refreshBalances(snapshot.account);
         return snapshot;
@@ -119,11 +122,10 @@ export function useWallet() {
       ...current,
       account: undefined,
       balances: undefined,
-      connecting: true,
+      connecting: false,
       error: undefined,
     }));
-    return syncWallet(true, wallet.provider);
-  }, [syncWallet, walletOptions]);
+  }, [walletOptions]);
 
   useEffect(() => {
     const providers = new Map<string, WalletProviderOption>();
@@ -152,32 +154,16 @@ export function useWallet() {
       addWallet({ id: detail.info.uuid, name: detail.info.name, provider: detail.provider });
     }
 
+    if (window.okxwallet) {
+      addWallet({ id: "legacy:okx", name: "OKX Wallet", provider: window.okxwallet });
+    } else if (window.ethereum) {
+      addWallet({ id: "legacy:browser", name: "Browser wallet", provider: window.ethereum });
+    }
+
     window.addEventListener("eip6963:announceProvider", announce);
     window.dispatchEvent(new Event("eip6963:requestProvider"));
 
-    const timer = window.setTimeout(() => {
-      if (window.okxwallet) {
-        addWallet({ id: "legacy:okx", name: "OKX Wallet", provider: window.okxwallet });
-      }
-      const injected = window.ethereum?.providers?.length
-        ? window.ethereum.providers
-        : window.ethereum
-          ? [window.ethereum]
-          : [];
-      injected.forEach((provider, index) => {
-        const name = provider.isOkxWallet
-          ? "OKX Wallet"
-          : provider.isMetaMask
-            ? "MetaMask"
-            : provider.isCoinbaseWallet
-              ? "Coinbase Wallet"
-              : `Browser wallet ${index + 1}`;
-        addWallet({ id: `legacy:${name.toLowerCase().replaceAll(" ", "-")}:${index}`, name, provider });
-      });
-    }, 0);
-
     return () => {
-      window.clearTimeout(timer);
       window.removeEventListener("eip6963:announceProvider", announce);
     };
   }, []);
