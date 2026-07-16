@@ -55,6 +55,7 @@ export function PaymentView({ invoice, wallet, onPaid }: PaymentViewProps) {
   const [error, setError] = useState<string>();
   const [copied, setCopied] = useState(false);
   const expired = isInvoiceExpired(invoice);
+  const visibleError = error ?? wallet.error;
 
   const balanceState = useMemo(() => {
     if (!wallet.account || !wallet.balances) return { ready: false, sufficient: false };
@@ -103,7 +104,7 @@ export function PaymentView({ invoice, wallet, onPaid }: PaymentViewProps) {
 
   async function submitPayment() {
     if (!wallet.account) {
-      await wallet.connect();
+      await wallet.connect().catch(() => undefined);
       return;
     }
     if (!wallet.isArc) {
@@ -185,10 +186,10 @@ export function PaymentView({ invoice, wallet, onPaid }: PaymentViewProps) {
           </div>
         </div>
 
-        {error ? (
+        {visibleError ? (
           <Callout.Root color="red" role="alert">
             <Callout.Icon><WarningCircle size={18} /></Callout.Icon>
-            <Callout.Text>{error}</Callout.Text>
+            <Callout.Text>{visibleError}</Callout.Text>
           </Callout.Root>
         ) : null}
 
