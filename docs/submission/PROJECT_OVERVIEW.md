@@ -47,14 +47,16 @@ Arc combines the properties this workflow needs in one place: USDC-denominated g
 ## Verifiable progress
 
 - Public web, API, worker, and managed PostgreSQL deployment
-- Live `0.01 USDC` Arc Testnet payment
+- Live wallet-signed `0.01 USDC` and `0.01 EURC` Arc Testnet payments
 - Successful transaction in block `51956775`
 - Explorer-reported confirmation within `<= 0.51s`
 - Worker observed one matching log and persisted one payment
 - Automated tests for domain validation, authentication boundaries, roles, webhook lifecycle, CSV safety, and RPC error handling
 - GitHub Actions, Docker deployment, health checks, and multi-provider RPC fallback
 
-Verified receipt: https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
+Verified USDC receipt: https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
+
+Verified EURC receipt: https://testnet.arcscan.app/tx/0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493
 
 ## Business model hypothesis
 

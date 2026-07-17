@@ -2,7 +2,7 @@
 
 **Stablecoin invoicing with verifiable onchain reconciliation on Arc.**
 
-[Live app](https://invoice-rail-web.onrender.com) · [Verified Arc transaction](https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1) · [Demo video](docs/assets/invoice-rail-demo.mp4) · [Architecture](docs/ARCHITECTURE.md) · [Submission kit](docs/submission/INDEX.md)
+[Live app](https://invoice-rail-web.onrender.com) · [USDC proof](https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1) · [EURC proof](https://testnet.arcscan.app/tx/0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493) · [Demo video](docs/assets/invoice-rail-demo.mp4) · [Architecture](docs/ARCHITECTURE.md) · [Submission kit](docs/submission/INDEX.md)
 
 Invoice Rail lets a merchant issue a USDC or EURC payment request, share a short payment link, and reconcile settlement from an Arc `Memo` event. The payer signs with their own wallet; Invoice Rail never receives private keys and does not custody funds.
 
@@ -13,10 +13,11 @@ Invoice Rail lets a merchant issue a USDC or EURC payment request, share a short
 | Item | Verified result |
 | --- | --- |
 | Public deployment | [invoice-rail-web.onrender.com](https://invoice-rail-web.onrender.com) |
-| Live Arc payment | `0.01 USDC` for invoice `IR-260715-8747A0EB3759` |
-| Transaction | [`0x8c93…18c1`](https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1) |
+| Live Arc payments | `0.01 USDC` and `0.01 EURC` |
+| USDC transaction | [`0x8c93…18c1`](https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1) |
+| EURC transaction | [`0xc877…a493`](https://testnet.arcscan.app/tx/0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493) |
 | Block | `51956775` |
-| Explorer result | `Success`, confirmed within `<= 0.51s` |
+| Explorer result | Both `Success`; USDC confirmed within `<= 0.51s` |
 | Testnet transaction fee | `0.002553726 USDC` |
 | Reconciliation | Worker observed one Memo log and persisted one payment |
 | Production data | Managed PostgreSQL 17 on Render |
@@ -146,7 +147,7 @@ Deployment details are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Migration, m
 
 ## Roadmap
 
-1. Complete the funded-wallet EURC regression and obtain a third-party security review; migrations, monitoring, alert rules, and rate limits are implemented.
+1. Expand USDC/EURC regression across multiple wallets and obtain a third-party security review; the first wallet-signed settlement for each asset is complete.
 2. Invitation acceptance, workspace naming, delivery history, and webhook replay.
 3. Search, reporting, partial payments, overpayments, refunds, and accounting integrations.
 4. Circle App Kit collection from other chains with Arc as the canonical settlement and reconciliation layer.

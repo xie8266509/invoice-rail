@@ -4,7 +4,7 @@
 
 Invoice Rail is a non-custodial stablecoin invoicing and reconciliation application built around Arc's transaction Memo primitive. It converts a wallet transfer into a durable business record by atomically binding the token transfer to a deterministic invoice reference, then independently verifying and persisting settlement.
 
-The public Alpha already runs as separate web and worker services with managed PostgreSQL. A live `0.01 USDC` transaction was confirmed in Arc block `51956775`; ArcScan reported success within `<= 0.51s`, and the worker indexed the Memo event and marked the invoice paid.
+The public Alpha already runs as separate web and worker services with managed PostgreSQL. Wallet-signed `0.01 USDC` and `0.01 EURC` settlements have both reached the Paid state with successful ArcScan receipts; the USDC transaction was confirmed in Arc block `51956775` within `<= 0.51s`.
 
 **Funding request:** `$50,000` milestone-based support over 16 weeks.
 
@@ -36,7 +36,8 @@ Without Arc's Memo and stablecoin-native execution model, Invoice Rail would nee
 
 - Public application: https://invoice-rail-web.onrender.com
 - Open source: https://github.com/xie8266509/invoice-rail
-- Verified receipt: https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
+- Verified USDC receipt: https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
+- Verified EURC receipt: https://testnet.arcscan.app/tx/0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493
 - Managed PostgreSQL 17, web service, and independent worker live on Render
 - Wallet challenge authentication and role-based workspaces
 - Idempotent event indexing and signed webhook outbox
@@ -54,7 +55,7 @@ No customer, revenue, or production-volume claims are made.
 - Ordered database migrations and rollback procedure
 - Structured logs, metrics, alerts, service-level dashboards, and RPC monitoring
 - Application and API rate limits
-- EURC funded-wallet regression and wallet compatibility matrix
+- Multi-wallet USDC/EURC compatibility matrix building on the two completed settlement proofs
 - External security review scope and threat-model package
 
 **Acceptance:** 30-day testnet environment with health monitoring, migration rehearsal, incident runbook, and reproducible USDC/EURC test evidence.
@@ -145,8 +146,9 @@ The work produces more than one application: a reusable Arc Memo payment pattern
 ## Contact and links
 
 - Project contact: https://github.com/xie8266509
-- Demo video: https://www.youtube.com/watch?v=zqCK5EUnowc
+- Demo video: replace the superseded YouTube upload with the canonical v3 file in `docs/assets/invoice-rail-demo.mp4`
 - Live app: https://invoice-rail-web.onrender.com
 - Repository: https://github.com/xie8266509/invoice-rail
 - Architecture: https://github.com/xie8266509/invoice-rail/blob/main/docs/ARCHITECTURE.md
-- Transaction proof: https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
+- USDC transaction proof: https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
+- EURC transaction proof: https://testnet.arcscan.app/tx/0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493

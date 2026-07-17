@@ -2,7 +2,7 @@
 
 ## Production status
 
-Invoice Rail is running on Arc Testnet with a public Next.js application, an independent indexing and webhook worker, and managed PostgreSQL 17. A live `0.01 USDC` payment was confirmed in block `51956775`; ArcScan reported success within `<= 0.51s`, and the worker persisted one matching payment.
+Invoice Rail is running on Arc Testnet with a public Next.js application, an independent indexing and webhook worker, and managed PostgreSQL 17. Wallet-signed `0.01 USDC` and `0.01 EURC` payments have both reached the Paid state with successful ArcScan receipts; the USDC transaction was confirmed in block `51956775` within `<= 0.51s`.
 
 ## System context
 
@@ -167,7 +167,7 @@ Additional tables hold the persistent index cursor, wallet challenges, hashed se
 ## Current limits
 
 - The Alpha has not completed a third-party security audit.
-- USDC has a verified live testnet payment; EURC still needs a funded-wallet regression.
+- USDC and EURC each have one verified wallet-signed testnet payment; broader wallet compatibility still needs regression coverage.
 - Workspaces are address-based and do not yet include invitation acceptance or organization profiles.
 - Search, accounting integrations, partial payments, overpayments, refunds, and webhook replay UI are not implemented.
 - Public RPC fallback improves availability but does not replace a dedicated production RPC agreement.
@@ -175,7 +175,7 @@ Additional tables hold the persistent index cursor, wallet challenges, hashed se
 
 ## Next architecture milestones
 
-1. Complete funded-wallet EURC regression and external security review; ordered migrations, logs, metrics, alert rules, and API limits are implemented.
+1. Expand USDC/EURC regression across multiple wallets and complete an external security review; ordered migrations, logs, metrics, alert rules, and API limits are implemented.
 2. Refund and exception state machine with immutable audit history.
 3. Webhook delivery console and dead-letter replay.
 4. Circle App Kit source-chain routing while retaining Arc as the canonical reconciliation layer.

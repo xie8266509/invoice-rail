@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Fingerprint, Lightning, WarningCircle } from "@phosphor-icons/react";
+import {
+  ArrowSquareOut,
+  CheckCircle,
+  Fingerprint,
+  Lightning,
+  WarningCircle,
+} from "@phosphor-icons/react";
 import { Callout, Text } from "@radix-ui/themes";
 import type { Address, Hex } from "viem";
 import { AppHeader } from "@/components/app-header";
@@ -286,6 +292,35 @@ export function InvoiceApp() {
               <Text size="2" weight="medium">Memo reconciliation</Text>
             </div>
           </div>
+        </section>
+
+        <section className="proof-rail" aria-label="Verified Arc Testnet settlement evidence">
+          <div className="proof-summary">
+            <Text className="proof-label">Verified on Arc Testnet</Text>
+            <strong>Two wallet-signed settlements</strong>
+          </div>
+          <a
+            className="proof-transaction"
+            href="https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View the verified 0.01 USDC transaction on ArcScan"
+          >
+            <span className="proof-asset"><CheckCircle size={17} weight="fill" /> USDC</span>
+            <span className="proof-result">0.01 settled in ≤0.51s</span>
+            <span className="proof-hash">0x8c93...18c1 <ArrowSquareOut size={15} /></span>
+          </a>
+          <a
+            className="proof-transaction"
+            href="https://testnet.arcscan.app/tx/0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View the verified 0.01 EURC transaction on ArcScan"
+          >
+            <span className="proof-asset"><CheckCircle size={17} weight="fill" /> EURC</span>
+            <span className="proof-result">0.01 settled successfully</span>
+            <span className="proof-hash">0xc877...a493 <ArrowSquareOut size={15} /></span>
+          </a>
         </section>
 
         {linkError || wallet.error || merchantSession.error ? (

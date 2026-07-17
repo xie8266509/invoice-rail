@@ -238,6 +238,93 @@ a {
   color: var(--accent);
 }
 
+.proof-rail {
+  min-height: 82px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: minmax(250px, 1.2fr) repeat(2, minmax(260px, 1fr));
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.proof-summary,
+.proof-transaction {
+  min-width: 0;
+  padding: 16px 20px;
+}
+
+.proof-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.proof-label {
+  color: var(--accent);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.proof-summary strong {
+  font-size: 16px;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+}
+
+.proof-transaction {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-content: center;
+  column-gap: 16px;
+  row-gap: 5px;
+  border-left: 1px solid var(--line);
+  color: var(--text-strong);
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.proof-transaction:hover {
+  background: var(--surface-muted);
+}
+
+.proof-transaction:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.proof-asset,
+.proof-hash {
+  display: inline-flex;
+  align-items: center;
+}
+
+.proof-asset {
+  gap: 7px;
+  color: var(--accent);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.proof-result {
+  justify-self: end;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.proof-hash {
+  grid-column: 1 / -1;
+  gap: 6px;
+  color: var(--text-muted);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+}
+
 .global-callout {
   margin-bottom: 20px;
 }
@@ -715,6 +802,19 @@ a {
     width: 100%;
   }
 
+  .proof-rail {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .proof-summary {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .proof-transaction:first-of-type {
+    border-left: 0;
+  }
+
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
@@ -768,6 +868,27 @@ a {
 
   .rail-facts {
     grid-template-columns: 1fr;
+  }
+
+  .proof-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .proof-summary,
+  .proof-transaction {
+    grid-column: auto;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .proof-summary,
+  .proof-transaction,
+  .proof-transaction:first-of-type {
+    border-left: 0;
+  }
+
+  .proof-transaction {
+    border-top: 1px solid var(--line);
   }
 
   .form-row,
