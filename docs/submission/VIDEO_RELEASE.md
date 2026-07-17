@@ -8,6 +8,7 @@
 - Duration: `50.644 seconds`
 - Video: `1920x1080`, `30 fps`, H.264
 - Audio: MPEG-4 AAC music and interface sound effects; no narration
+- Published video: https://www.youtube.com/watch?v=uKpPtzfsKMQ
 
 Do not upload an older export from Downloads or the repository root. Before publishing, verify that the file checksum matches the value above and that the 41–46 second chapter shows both the USDC and EURC paid receipts.
 
@@ -15,7 +16,7 @@ Do not upload an older export from Downloads or the repository root. Before publ
 
 **Title**
 
-> Invoice Rail — Verifiable USDC & EURC invoicing on Arc
+> Invoice Rail — Verifiable USDC & EURC Invoicing on Arc
 
 **Description**
 
@@ -31,14 +32,14 @@ Do not upload an older export from Downloads or the repository root. Before publ
 >
 > EURC proof: https://testnet.arcscan.app/tx/0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493
 
-## Pre-publish check
+## Publication verification
 
-1. Upload the canonical file above as a new YouTube video.
-2. Use **Unlisted** while checking the result; switch to **Public** only when ready.
-3. Confirm the first four seconds animate and the audio meter moves.
-4. Scrub to 41 seconds and confirm the dual USDC/EURC proof chapter is present.
-5. Open the public link in a private window and play at 1080p.
-6. Replace the superseded YouTube URL in the submission kit, grant proposal, and application forms.
+- [x] Uploaded the canonical file as a new YouTube video.
+- [x] Published the final title and reviewer-facing description.
+- [x] Confirmed the first four seconds animate and the audio meter moves.
+- [x] Confirmed the 41–46 second chapter shows both USDC and EURC paid receipts.
+- [x] Verified the public video metadata without an authenticated YouTube session.
+- [x] Replaced the superseded URL in the repository submission kit and grant copy.
 
 ## What changed from the superseded upload
 

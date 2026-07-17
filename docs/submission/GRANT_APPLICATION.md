@@ -146,7 +146,7 @@ The work produces more than one application: a reusable Arc Memo payment pattern
 ## Contact and links
 
 - Project contact: https://github.com/xie8266509
-- Demo video: replace the superseded YouTube upload with the canonical v3 file in `docs/assets/invoice-rail-demo.mp4`
+- Demo video: https://www.youtube.com/watch?v=uKpPtzfsKMQ
 - Live app: https://invoice-rail-web.onrender.com
 - Repository: https://github.com/xie8266509/invoice-rail
 - Architecture: https://github.com/xie8266509/invoice-rail/blob/main/docs/ARCHITECTURE.md
