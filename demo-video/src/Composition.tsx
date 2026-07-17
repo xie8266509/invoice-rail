@@ -560,7 +560,7 @@ const MemoScene = () => {
               color: COLORS.mint,
             }}
           >
-            THE DIFFERENCE IS NOT ANOTHER DATABASE FIELD
+            BUSINESS CONTEXT, WRITTEN INTO THE PAYMENT
           </div>
           <div
             style={{
@@ -572,7 +572,7 @@ const MemoScene = () => {
               lineHeight: 1,
             }}
           >
-            The invoice reference travels with the money.
+            The invoice ID travels with the payment.
           </div>
         </FadeUp>
       </div>
@@ -869,97 +869,105 @@ const ProofScene = () => {
   );
 };
 
-const OpsScene = () => {
+const StablecoinsScene = () => {
   const frame = useCurrentFrame();
-  const lines = [
-    ["08:32:18.104", "memo log detected", "51956775"],
-    ["08:32:18.127", "token · recipient · amount", "match"],
-    ["08:32:18.149", "payment persisted", "idempotent"],
-    ["08:32:18.183", "invoice.paid", "delivered"],
-  ];
+  const usdc = progress(frame, 24, 58);
+  const eurc = progress(frame, 62, 98);
   return (
-    <DarkStage section="06 / Operate">
-      <div style={{ position: "absolute", left: 110, top: 150, width: 940 }}>
+    <DarkStage section="06 / Stablecoins">
+      <div style={{ position: "absolute", left: 105, top: 138, right: 105 }}>
         <FadeUp frame={frame}>
-          <div style={{ fontSize: 76, fontWeight: 600, letterSpacing: -4 }}>
-            A payment your software can act on.
+          <div style={{ fontSize: 76, fontWeight: 600, letterSpacing: -4.2 }}>
+            One rail. Two settlement currencies.
+          </div>
+          <div style={{ fontSize: 31, color: COLORS.muted, marginTop: 10 }}>
+            Real USDC and EURC payments, independently verified on Arc Testnet.
           </div>
         </FadeUp>
       </div>
-      <div
+      <ProductWindow
+        src="v2/invoice-paid.png"
         style={{
           position: "absolute",
-          left: 110,
-          right: 110,
-          top: 395,
-          height: 430,
-          borderTop: "1px solid rgba(242,243,237,.16)",
-          borderBottom: "1px solid rgba(242,243,237,.16)",
-          display: "grid",
-          gridTemplateColumns: "1.25fr .75fr",
+          left: 105,
+          top: 330,
+          width: 790,
+          height: 620,
+          borderRadius: 18,
+          opacity: usdc,
+          translate: `${interpolate(usdc, [0, 1], [-50, 0])}px 0`,
         }}
+        imageStyle={{ objectFit: "contain", background: "#f3f7f5" }}
       >
-        <div style={{ padding: "42px 60px 42px 0", borderRight: "1px solid rgba(242,243,237,.16)" }}>
-          {lines.map(([time, label, result], index) => {
-            const line = progress(frame, 25 + index * 18, 45 + index * 18);
-            return (
-              <div
-                key={label}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "190px 1fr 160px",
-                  alignItems: "center",
-                  height: 82,
-                  borderBottom: "1px solid rgba(242,243,237,.08)",
-                  fontFamily: mono,
-                  fontSize: 21,
-                  opacity: line,
-                  translate: `${interpolate(line, [0, 1], [-26, 0])}px 0`,
-                }}
-              >
-                <span style={{ color: COLORS.muted }}>{time}</span>
-                <span>{label}</span>
-                <span style={{ color: COLORS.mint, textAlign: "right" }}>{result}</span>
-              </div>
-            );
-          })}
-        </div>
         <div
           style={{
-            padding: "50px 0 40px 66px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 34,
+            position: "absolute",
+            left: 24,
+            top: 24,
+            padding: "12px 18px",
+            borderRadius: 999,
+            background: COLORS.ink,
+            color: COLORS.mint,
+            fontFamily: mono,
+            fontSize: 19,
+            letterSpacing: 1.2,
           }}
         >
-          {[
-            ["LOGS", "1"],
-            ["PAYMENTS", "1"],
-            ["FALSE MATCHES", "0"],
-          ].map(([label, value], index) => {
-            const stat = progress(frame, 48 + index * 16, 68 + index * 16);
-            return (
-              <div key={label} style={{ display: "flex", alignItems: "baseline", gap: 24, opacity: stat }}>
-                <div style={{ fontSize: 64, fontWeight: 600, color: COLORS.mint }}>{value}</div>
-                <div style={{ fontFamily: mono, fontSize: 19, letterSpacing: 1.4, color: COLORS.muted }}>
-                  {label}
-                </div>
-              </div>
-            );
-          })}
+          USDC · 0x8c93…18c1
         </div>
-      </div>
+      </ProductWindow>
+      <ProductWindow
+        src="v2/invoice-paid-eurc.png"
+        style={{
+          position: "absolute",
+          right: 105,
+          top: 330,
+          width: 790,
+          height: 620,
+          borderRadius: 18,
+          opacity: eurc,
+          translate: `${interpolate(eurc, [0, 1], [50, 0])}px 0`,
+        }}
+        imageStyle={{ objectFit: "contain", background: "#f3f7f5" }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: 24,
+            top: 24,
+            padding: "12px 18px",
+            borderRadius: 999,
+            background: COLORS.ink,
+            color: COLORS.mint,
+            fontFamily: mono,
+            fontSize: 19,
+            letterSpacing: 1.2,
+          }}
+        >
+          EURC · 0xc877…a493
+        </div>
+      </ProductWindow>
       <div
         style={{
           position: "absolute",
-          left: 110,
-          bottom: 70,
-          fontSize: 28,
-          color: COLORS.muted,
-          opacity: progress(frame, 104, 132),
+          left: 932,
+          top: 585,
+          width: 56,
+          height: 56,
+          borderRadius: "50%",
+          border: `2px solid rgba(101,242,184,${progress(frame, 88, 118)})`,
+          color: COLORS.mint,
+          background: COLORS.ink,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: mono,
+          fontSize: 22,
+          opacity: progress(frame, 88, 118),
+          zIndex: 12,
         }}
       >
-        Signed webhooks · CSV export · PostgreSQL record
+        +
       </div>
     </DarkStage>
   );
@@ -1040,7 +1048,7 @@ const EndScene = () => {
             opacity: url,
           }}
         >
-          LIVE ON ARC TESTNET · OPEN SOURCE
+          USDC + EURC · LIVE ON ARC TESTNET · OPEN SOURCE
         </div>
       </div>
     </DarkStage>
@@ -1118,7 +1126,7 @@ export const InvoiceRailFilm = () => {
         </TransitionSeries.Sequence>
         <TransitionSeries.Transition presentation={fade()} timing={timing} />
         <TransitionSeries.Sequence durationInFrames={SCENES[6]}>
-          <OpsScene />
+          <StablecoinsScene />
         </TransitionSeries.Sequence>
         <TransitionSeries.Transition presentation={fade()} timing={timing} />
         <TransitionSeries.Sequence durationInFrames={SCENES[7]}>

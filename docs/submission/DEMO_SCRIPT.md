@@ -17,7 +17,7 @@
 | 19–27s | Bind | The Memo call binds token, recipient, amount, and invoice ID in one atomic transaction. |
 | 27–34s | Verify | The invoice moves from open to paid only after the exact onchain match. |
 | 34–41s | Proof | The ArcScan receipt exposes status, Memo method, block, fee, hash, and finality. |
-| 41–46s | Operate | The worker detects the log, matches fields, persists idempotently, and emits `invoice.paid`. |
+| 41–46s | Stablecoins | Two real receipts show both USDC and EURC settling through the same verified flow. |
 | 46–51s | Live alpha | Product promise, public URL, Arc Testnet status, and open-source close. |
 
 ## Creative rules
@@ -54,3 +54,10 @@
 - Explorer result: `Success`
 - Reported confirmation: `<= 0.51s`
 - Testnet fee: `0.002553726 USDC`
+
+## Second verified transaction used in the film
+
+- Invoice: `IR-260716-7511CB3256CF`
+- Amount: `0.01 EURC`
+- Transaction: `0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493`
+- Explorer result: `Success`

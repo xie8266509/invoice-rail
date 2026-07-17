@@ -9,7 +9,8 @@ This is a paste-ready nomination and builder-spotlight answer bank. Day One Arch
 - **Stage:** Public Arc Testnet Alpha
 - **Live product:** https://invoice-rail-web.onrender.com
 - **Source:** https://github.com/xie8266509/invoice-rail
-- **Verified transaction:** https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
+- **Verified USDC transaction:** https://testnet.arcscan.app/tx/0x8c931d33318139415076fd52230d0a05cff2ebdc287ae964d10732d6980218c1
+- **Verified EURC transaction:** https://testnet.arcscan.app/tx/0xc877dd1382a0721c0805497ae475a64c204da107e5b3e80e725cb579d6e6a493
 - **Contact:** https://github.com/xie8266509
 
 ## What are you building?
@@ -39,9 +40,9 @@ The complete production-shaped testnet loop is live:
 - public Next.js web and API service;
 - separate continuously running indexer and webhook worker;
 - private managed PostgreSQL 17;
-- a successful `0.01 USDC` payment in Arc block `51956775`;
+- successful wallet-signed `0.01 USDC` and `0.01 EURC` payments with public ArcScan receipts;
 - ArcScan confirmation within `<= 0.51s`;
-- automatic detection of one Memo log and persistence of one matching payment;
+- automatic Memo detection and persisted Paid receipt states;
 - a paid invoice UI linked to the public transaction receipt.
 
 No user, volume, or revenue traction is claimed yet.
@@ -65,7 +66,7 @@ No user, volume, or revenue traction is claimed yet.
 
 ## 90-day build plan
 
-- **Days 1–30:** versioned migrations, structured logs, metrics, alerts, rate limits, and EURC regression.
+- **Days 1–30:** versioned migrations, structured logs, metrics, alerts, rate limits, and the first USDC/EURC settlement regressions (completed).
 - **Days 31–60:** invoice search, delivery history, webhook replay, partial-payment and refund state design.
 - **Days 61–90:** three design-partner workflows, accounting exports, and a Circle App Kit source-chain prototype settling to Arc.
 
@@ -79,10 +80,10 @@ No user, volume, or revenue traction is claimed yet.
 
 ## Public spotlight blurb
 
-Invoice Rail turns Arc stablecoin transfers into finance-ready invoices. Merchants issue USDC or EURC payment links, payers sign with their own wallets, and an independent worker verifies Arc Memo events before marking invoices paid. The public Alpha includes team roles, PostgreSQL, signed webhooks, CSV export, and a verified sub-second Arc Testnet payment—all without custodying funds or deploying a custom settlement contract.
+Invoice Rail turns Arc stablecoin transfers into finance-ready invoices. Merchants issue USDC or EURC payment links, payers sign with their own wallets, and an independent worker verifies Arc Memo events before marking invoices paid. The public Alpha includes team roles, PostgreSQL, signed webhooks, CSV export, and successful wallet-signed USDC and EURC Arc Testnet payments—including a sub-second USDC proof—all without custodying funds or deploying a custom settlement contract.
 
 ## Short outreach message
 
 Subject: Day One Architects nomination — Invoice Rail
 
-Invoice Rail is a live Arc Testnet Alpha for non-custodial stablecoin invoicing and onchain reconciliation. We have completed a public end-to-end USDC payment using Arc Memo, with a separate indexer, managed PostgreSQL, signed webhooks, and a verifiable ArcScan receipt. We would like to contribute the implementation as a builder reference and present the product in a Day One Architect session. Live app, source, architecture, and demo are available in the project repository.
+Invoice Rail is a live Arc Testnet Alpha for non-custodial stablecoin invoicing and onchain reconciliation. We have completed public end-to-end USDC and EURC payments using Arc Memo, with a separate indexer, managed PostgreSQL, signed webhooks, and verifiable ArcScan receipts. We would like to contribute the implementation as a builder reference and present the product in a Day One Architect session. Live app, source, architecture, and demo are available in the project repository.
